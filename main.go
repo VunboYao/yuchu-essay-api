@@ -16,10 +16,17 @@ func main() {
 		log.Fatalf("load config: %v", err)
 	}
 
+	// 2. 初始化 MySQL
 	if err := database.InitMySQL(cfg.Database.DSN); err != nil {
 		log.Fatalf("init mysql: %v", err)
 	}
-	// 2. Redis 连接失败仅告警，不阻断启动（一期业务尚未使用 RDB）
+	// 3. 关闭 MySQL 连接
+	defer func() {
+		if err := database.CloseMySQL(); err != nil {
+			log.Printf("close mysql: %v", err)
+		}
+	}()
+	// 4. Redis 连接失败仅告警，不阻断启动（一期业务尚未使用 RDB）
 	if err := database.InitRedis(cfg.Redis); err != nil {
 		log.Printf("redis disabled: %v", err)
 	}
