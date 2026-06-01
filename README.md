@@ -1,0 +1,226 @@
+# course_server
+
+内容型作文小程序 MVP 后端。
+
+Agent 核心规则见 [AGENTS.md](./AGENTS.md)（MVP 边界、开发流程、注释要求）。
+
+## 当前已实现
+
+- Go + Gin 工程骨架
+- MySQL/GORM 模型与自动迁移
+- Redis 连接占位
+- 管理员登录与 JWT
+- 文章、正文图片、优秀作文、分类、标签、下载资料基础 API
+- 小程序首页、分类、文章、优秀作文、搜索、收藏、历史、下载记录接口骨架
+- 免费下载权限校验：`access_type=free` 且标签包含「免费」
+
+## 启动
+
+1. 创建数据库：
+
+```sql
+CREATE DATABASE essay_mvp DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+2. 修改 `config.yaml` 中的 MySQL/Redis 配置。
+
+3. 启动：
+
+```bash
+go mod tidy
+go run .
+```
+
+默认后台管理员：
+
+```text
+admin / admin123
+```
+
+Redis 连接失败时仅打印警告，不阻断服务启动。
+
+## 重要边界
+
+第一期不包含订单、支付、视频、会员、分销、付费下载。完整边界与 Agent 开发约束见 [AGENTS.md](./AGENTS.md)。
+
+---
+
+## 目录结构
+
+```text
+course_server/
+├── main.go                 # 启动：config → DB/Redis → migrate/seed → router
+├── config.yaml             # 运行时配置（勿提交生产密钥）
+└── internal/
+    ├── config/             # YAML 配置加载
+    ├── database/           # MySQL/Redis 连接、AutoMigrate、Seed
+    ├── model/              # GORM 模型 + 状态/权限常量
+    ├── handler/            # HTTP 处理（按领域分文件）
+    ├── middleware/         # CORS、AdminAuth、UserAuth
+    ├── router/             # 路由注册（唯一入口）
+    └── pkg/
+        ├── jwt/            # JWT 签发/解析
+        └── response/       # 统一响应
+```
+
+**新增代码放置规则：**
+
+- 新 API 路由 → `internal/router/router.go`
+- 新表/字段 → `internal/model/models.go`，并同步 `internal/database/migrate.go`
+- Handler 方法挂在 `Server` 结构体上（`internal/handler/server.go`）
+- 不在 `main.go` 写业务逻辑
+
+### 为什么使用 `internal/` 目录
+
+Go 规定：路径中包含 `internal` 的包，**只能被该 `internal` 目录的父目录及其子目录下的代码 import**；项目外的其他模块无法引用。这是 Go 官方推荐的封装方式（见 [Go 1.4 Release Notes — Internal packages](https://go.dev/doc/go1.4#internalpackages)）。
+
+在本项目中：
+
+```text
+course_server/              ← internal 的「父目录」
+├── main.go                 ✅ 可以 import course_server/internal/...
+└── internal/
+    ├── config/             ❌ 外部项目不能 import
+    ├── handler/
+    └── ...
+```
+
+**作用：**
+
+| 目的 | 说明 |
+|---|---|
+| 封装实现细节 | 对外不暴露 handler、database 等内部实现，后续重构不影响外部 |
+| 防止误用 | 其他仓库无法 `import "course_server/internal/handler"` 当公共库使用 |
+| 明确边界 | 一眼可辨：`internal/` 下为项目私有代码，根目录 `main.go` 为对外入口 |
+
+**与 `internal/pkg/` 的区别：** 本项目的 `internal/pkg/jwt`、`internal/pkg/response` 仍在 `internal/` 下，同样不可被外部引用。这里的 `pkg` 仅表示「项目内可复用的工具包」，并非对外公开的公共库。若将来需要被其他项目 import，应放在模块根目录的 `pkg/`（且不在 `internal/` 内）。
+
+## API 规范
+
+**路由前缀：**
+
+| 客户端 | 前缀 |
+|---|---|
+| 后台管理 | `/admin/api/v1` |
+| 微信小程序 | `/api/v1` |
+| 健康检查 | `GET /health` |
+
+**统一响应：**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {}
+}
+```
+
+**分页响应**（`data` 内）：
+
+```json
+{
+  "list": [],
+  "total": 0,
+  "page": 1,
+  "pageSize": 20
+}
+```
+
+使用 `internal/pkg/response` 包：
+
+- 成功：`response.Success()` / `response.Page()`
+- 错误：`response.BadRequest` / `Unauthorized` / `Forbidden` / `NotFound` / `ServerError`
+- HTTP 状态码与 body 中的 `code` 保持一致
+
+**分页默认值**（`internal/handler/helpers.go`）：
+
+- `page` 默认 1，`pageSize` 默认 20，最大 100
+- 列表默认排序：`sort_order DESC, id DESC`
+
+**JSON 字段命名：** 模型使用 camelCase JSON tag（如 `adminId`、`coverImg`），新增字段保持一致。
+
+## 鉴权
+
+**Header：** `Authorization: Bearer <token>`
+
+JWT 区分 `type`：`admin` / `user`，不可混用。中间件注入 `auth_id`、`auth_subject`、`auth_role`；handler 通过 `currentAuthID(c)` 读取当前用户 ID。
+
+| 场景 | 入口 | 中间件 |
+|---|---|---|
+| 后台登录 | `POST /admin/api/v1/auth/login` | 无 |
+| 后台接口 | `/admin/api/v1/*`（除 login） | `AdminAuth` |
+| 小程序登录 | `POST /api/v1/wx/login` | 无 |
+| 需登录的小程序接口 | `/api/v1/mine`、`/favorites`、`/history`、`/downloads` | `UserAuth` |
+| 公开小程序接口 | `/api/v1/home`、`/articles`、`/download-files/:id/sign-url` 等 | 无 |
+
+- 管理员密码：bcrypt 哈希
+- 微信登录：当前为 dev fallback（`openid = "dev_" + code`）；配置 `wechat.app_id/app_secret` 后应替换为 code2session
+
+## 下载权限
+
+公开下载签名接口：`GET /api/v1/download-files/:id/sign-url`
+
+须同时满足以下三条件才下发 URL，否则返回 403：
+
+1. `status = 1`（`StatusEnabled`）
+2. `access_type = "free"`（`AccessTypeFree`）
+3. `tags` 字符串包含「免费」
+
+`purchase_required` / `member_only` / `internal` 一期一律拒绝。
+
+下载成功时：写入 `download_logs`、递增 `download_count`；若 `owner_type=article`，同步递增关联文章的下载数。
+
+## 数据模型约定
+
+- 状态与权限常量定义在 `internal/model/models.go`（如 `StatusEnabled`、`AccessTypeFree`），禁止魔法数字/字符串散落
+- 查询字段须加 index：`openid`、`slug`、`target_type/target_id`、`created_at` 及分类筛选字段
+- 种子数据：默认管理员 `admin/admin123`（`internal/database/seed.go`）
+
+**文章正文图片（`bodyImages`）：**
+
+- 存储于 `articles.body_images`，JSON 数组，按序渲染
+- 创建/更新文章时在请求体中传入；列表接口省略该字段，详情接口返回完整数组
+- 单篇最多 20 张，URL 不可为空
+
+```json
+{
+  "bodyImages": [
+    "https://oss.example.com/article/1-part1.jpg",
+    "https://oss.example.com/article/1-part2.jpg"
+  ]
+}
+```
+
+> 历史 `article_sections` 表已废弃，一期不再使用。
+
+## 代码风格
+
+- 参数绑定：`c.ShouldBindJSON` + `binding:"required"`
+- DB 访问：全局 `database.DB`，复杂写操作用 `Transaction`
+- 错误消息：英文简短描述（如 `"failed to list articles"`）
+- 复用 `pageParams` / `paginate` / `response.*`，不新增 service/repository 层除非明确要求重构
+- **注释规范详见 [AGENTS.md](./AGENTS.md)**
+
+## 配置说明
+
+`config.yaml` 各段含义：
+
+| 段 | 用途 |
+|---|---|
+| `server.addr` | 监听地址，默认 `:8080` |
+| `database.dsn` | MySQL 连接串 |
+| `redis` | Redis 地址、密码、DB |
+| `jwt` | 签名密钥与 issuer |
+| `oss` | 对象存储（封面上传、资料文件） |
+| `wechat` | 小程序 AppID / AppSecret |
+
+## 关联文档
+
+| 文档 | 说明 |
+|---|---|
+| [AGENTS.md](./AGENTS.md) | Agent 核心规则（边界、开发流程、注释） |
+| [prd/001-产品整体结构.md](../prd/001-产品整体结构.md) | 产品整体结构 |
+| [prd/003-技术文档介绍.md](../prd/003-技术文档介绍.md) | 技术方案与接口规范 |
+| [prd/004](../prd/004-开发计划-第一阶段：后端基础与数据模型（Day1-7）.md) ~ [005](../prd/005-开发计划-第二阶段：后端业务接口与统计（Day8-12）.md) | 后端开发计划 |
+| [study_doc/](../study_doc/) | Go/Gin 学习笔记（参考，非权威契约） |
+| [Admin/](../Admin/) | 后台管理前端 |
