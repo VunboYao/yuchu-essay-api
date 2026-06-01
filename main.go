@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	// 1. 读取 config.yaml（文件不存在时使用内置默认值）
+	// 1. 读取 config.yaml；文件不存在时使用 config.Load 内置的默认值
 	cfg, err := config.Load("config.yaml")
 	if err != nil {
 		log.Fatalf("load config: %v", err)
