@@ -10,25 +10,30 @@ package model
 
 // 通用与内容状态、下载权限常量（禁止在 handler 中散落魔法值）。
 const (
+	// 通用状态常量: 0禁用 1启用
 	StatusDisabled = 0
 	StatusEnabled  = 1
 
+	// 文章状态常量：0草稿 1已发布
 	ArticleStatusDraft     = 0
 	ArticleStatusPublished = 1
 
+	// 下载分类常量：免费资料 课件资料 会员资料 内部资料
 	DownloadCategoryFree       = "free"
 	DownloadCategoryCourseware = "courseware"
 	DownloadCategoryMember     = "member"
 	DownloadCategoryInternal   = "internal"
 
+	// 下载权限常量：免费 付费 会员 内部
 	AccessTypeFree             = "free"
 	AccessTypePurchaseRequired = "purchase_required"
 	AccessTypeMemberOnly       = "member_only"
 	AccessTypeInternal         = "internal" // 一期一律拒绝公开下载签名
 
-	// 收藏/分享/浏览等行为的目标类型，用于计数回写与日志归类。
+	// 收藏/分享/浏览等行为的目标类型：文章 作文
 	TargetTypeArticle = "article"
 	TargetTypeEssay   = "essay"
 
+	// 最大正文图片数量
 	MaxBodyImages = 20
 )

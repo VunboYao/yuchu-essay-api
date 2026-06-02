@@ -30,6 +30,7 @@ func main() {
 	if err := database.InitRedis(cfg.Redis); err != nil {
 		log.Printf("redis disabled: %v", err)
 	}
+	// 5. 自动建表
 	if err := database.AutoMigrate(); err != nil {
 		log.Fatalf("auto migrate: %v", err)
 	}
