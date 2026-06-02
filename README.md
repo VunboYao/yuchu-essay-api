@@ -7,7 +7,7 @@ Agent 核心规则见 [AGENTS.md](./AGENTS.md)（MVP 边界、开发流程、注
 ## 当前已实现
 
 - Go + Gin 工程骨架
-- MySQL/GORM 模型与自动迁移
+- MySQL/GORM 模型（按共用/后台/小程序分文件）与自动迁移、表/列注释
 - Redis 连接占位
 - 管理员登录与 JWT
 - 文章、正文图片、优秀作文、分类、标签、下载资料基础 API
@@ -54,7 +54,13 @@ course_server/
 └── internal/
     ├── config/             # YAML 配置加载
     ├── database/           # MySQL/Redis 连接、AutoMigrate、Seed
-    ├── model/              # GORM 模型 + 状态/权限常量
+    ├── model/              # GORM 模型（models.go 常量 + model_* 分文件）
+    │   ├── models.go           # 业务常量
+    │   ├── model_shared.go     # 【共用】内容/配置
+    │   ├── model_admin.go      # 【后台】
+    │   ├── model_miniprogram.go  # 【小程序】
+    │   ├── model_order.go      # 【二期】订单占位
+    │   └── db_comments.go      # 表级 COMMENT
     ├── handler/            # HTTP 处理（按领域分文件）
     ├── middleware/         # CORS、AdminAuth、UserAuth
     ├── router/             # 路由注册（唯一入口）
@@ -66,7 +72,7 @@ course_server/
 **新增代码放置规则：**
 
 - 新 API 路由 → `internal/router/router.go`
-- 新表/字段 → `internal/model/models.go`，并同步 `internal/database/migrate.go`
+- 新表/字段 → 按使用端写入 `internal/model/` 对应文件（见「数据模型文件结构」），并同步 `internal/database/migrate.go` 与 `db_comments.go`
 - Handler 方法挂在 `Server` 结构体上（`internal/handler/server.go`）
 - 不在 `main.go` 写业务逻辑
 
@@ -172,9 +178,36 @@ JWT 区分 `type`：`admin` / `user`，不可混用。中间件注入 `auth_id`�
 
 ## 数据模型约定
 
-- 状态与权限常量定义在 `internal/model/models.go`（如 `StatusEnabled`、`AccessTypeFree`），禁止魔法数字/字符串散落
+### 数据模型文件结构
+
+`internal/model/` 按**使用端**分文件，避免一期内容与二期订单/支付混写：
+
+| 文件 | 归属 | 表（一期） |
+|------|------|------------|
+| `models.go` | 公共 | 业务常量（`StatusEnabled`、`AccessTypeFree` 等），**不放 struct** |
+| `model_shared.go` | 【共用】后台写、小程序读 | `taxonomy_units`、`tags`、`articles`、`article_tags`、`essay_examples`、`essay_example_tags`、`download_files`、`ad_slots`、`home_blocks`、`official_account_configs` |
+| `model_admin.go` | 【后台】 | `admins`、`admin_operation_logs`、`system_settings` |
+| `model_miniprogram.go` | 【小程序】 | `users`、`download_logs`、`favorites`、`view_logs`、`search_logs`、`share_logs`、`ad_events` |
+| `model_order.go` | 【二期】占位 | 订单/支付表**仅写在此文件**（一期禁止实现逻辑） |
+| `db_comments.go` | 迁移辅助 | MySQL 表级 `COMMENT`（`ApplyTableComments`） |
+
+**新增/修改表时：**
+
+1. 在对应 `model_*.go` 增加 struct，字段加 `gorm:"comment:..."` 列注释
+2. 在 `internal/database/migrate.go` 的 `AutoMigrate` 中按分组追加（顺序：**共用 → 后台 → 小程序 → 二期订单**）
+3. 在 `db_comments.go` 的 `tableCommentEntries` 中追加表注释（与 migrate 分组一致）
+
+**二期订单/支付约定：**
+
+- 新表只放在 `model_order.go`（或 `model_order_*.go`），**不改** `model_shared.go` 中 `Article` 等内容主表
+- 权限继续通过 `download_files.owner_type` / `owner_id` / `access_type` 接入，不在内容表上堆订单字段
+
+### 其它约定
+
+- 状态与权限常量定义在 `models.go`，禁止魔法数字/字符串散落在 handler
 - 查询字段须加 index：`openid`、`slug`、`target_type/target_id`、`created_at` 及分类筛选字段
 - 种子数据：默认管理员 `admin/admin123`（`internal/database/seed.go`）
+- 启动时 `AutoMigrate` 后执行 `ApplyTableComments`，库表可见【后台】/【小程序】/【共用】前缀
 
 **文章正文图片（`bodyImages`）：**
 
