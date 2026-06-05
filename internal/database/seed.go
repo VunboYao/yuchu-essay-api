@@ -17,14 +17,18 @@ func SeedAdmin() error {
 	}
 
 	var count int64
+	// 检查是否已经存在管理员
 	if err := DB.Model(&model.Admin{}).Where("username = ?", "admin").Count(&count).Error; err != nil {
 		return err
 	}
+	// 如果管理员不存在，则创建管理员
 	if count == 0 {
+		// 生成密码哈希
 		hash, err := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 		if err != nil {
 			return err
 		}
+		// 创建管理员
 		if err := DB.Create(&model.Admin{
 			Username:     "admin",
 			PasswordHash: string(hash),
@@ -35,11 +39,13 @@ func SeedAdmin() error {
 		}
 	}
 
+	// 创建基础标签
 	seedTags := []model.Tag{
 		{Name: "免费", Type: "download", Status: model.StatusEnabled},
 		{Name: "想象作文", Type: "topic", Status: model.StatusEnabled},
 		{Name: "优秀范文", Type: "essay", Status: model.StatusEnabled},
 	}
+	// 创建基础标签
 	for _, tag := range seedTags {
 		DB.FirstOrCreate(&tag, model.Tag{Name: tag.Name, Type: tag.Type})
 	}
