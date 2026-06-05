@@ -151,6 +151,39 @@ course_server/              ← internal 的「父目录」
 
 JWT 区分 `type`：`admin` / `user`，不可混用。中间件注入 `auth_id`、`auth_subject`、`auth_role`；handler 通过 `currentAuthID(c)` 读取当前用户 ID。
 
+### Authorization 请求头说明
+
+HTTP 的 `Authorization` 不是「专门放 token 的字段」，而是「认证方式 + 凭证」：
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+| 写法 | 示例 | 说明 |
+|---|---|---|
+| 标准（推荐） | `Authorization: Bearer <token>` | OAuth/JWT 通用约定，服务端一眼可知按 Bearer Token 解析 |
+| 兼容 | `Authorization: <token>` | 后端 `bearerToken` 已兼容裸 token，便于 Apifox 等工具直接粘贴 |
+
+**为什么推荐带 `Bearer` 前缀？**
+
+- `Authorization` 还支持 `Basic`、`Digest` 等 scheme，前缀标明解析方式
+- 网关、第三方 API、监控工具均默认识别 `Bearer <token>`
+- 前端多写 7 个字符（`Bearer `），换来规范与跨服务兼容
+
+**前端写法（推荐）：**
+
+```javascript
+// axios 拦截器
+config.headers.Authorization = `Bearer ${token}`
+
+// fetch
+headers: { Authorization: `Bearer ${token}` }
+```
+
+登录接口返回的 `data.token` 只存 token 本身；发请求时再拼 `Bearer ` 前缀。Apifox/Postman 选 **Bearer Token** 鉴权类型时，工具会自动拼接，无需手写前缀。
+
+**常见 401 原因：** Header 名写对但值格式不对（如只传裸 token 且后端未兼容、或 `Bearer` 与 token 之间缺少空格）。开发调试可先用裸 token，联调与上线建议统一 `Bearer ${token}`。
+
 | 场景 | 入口 | 中间件 |
 |---|---|---|
 | 后台登录 | `POST /admin/api/v1/auth/login` | 无 |

@@ -49,13 +49,15 @@ func auth(cfg *config.Config, tokenType string) gin.HandlerFunc {
 	}
 }
 
-// 提取 Bearer Token
+// bearerToken 从 Authorization 提取 JWT，兼容 Bearer <token> 与裸 token 两种写法。
 func bearerToken(header string) string {
-	// 分割 header 为两个部分
-	parts := strings.SplitN(header, " ", 2)
-	// 如果长度为 2 且第一个部分为 Bearer，则返回第二个部分
-	if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
-		return parts[1]
+	header = strings.TrimSpace(header)
+	if header == "" {
+		return ""
 	}
-	return ""
+	parts := strings.SplitN(header, " ", 2)
+	if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+		return strings.TrimSpace(parts[1])
+	}
+	return header
 }
