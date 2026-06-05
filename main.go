@@ -39,6 +39,7 @@ func main() {
 		log.Fatalf("seed admin: %v", err)
 	}
 
+	// 7. 启动 HTTP 服务
 	r := router.Setup(cfg)
 	if err := r.Run(cfg.Server.Addr); err != nil {
 		log.Fatalf("run server: %v", err)

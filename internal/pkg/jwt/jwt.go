@@ -16,14 +16,17 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// 签发管理员 JWT
 func SignAdmin(secret, issuer string, adminID uint, username, role string) (string, error) {
 	return sign(secret, issuer, adminID, username, role, "admin")
 }
 
+// 签发用户 JWT
 func SignUser(secret, issuer string, userID uint, openid string) (string, error) {
 	return sign(secret, issuer, userID, openid, "", "user")
 }
 
+// 签发 JWT
 func sign(secret, issuer string, id uint, subject, role, tokenType string) (string, error) {
 	claims := Claims{
 		ID:      id,
@@ -42,12 +45,14 @@ func sign(secret, issuer string, id uint, subject, role, tokenType string) (stri
 
 // Parse 解析 token 并校验 type 与签发方，防止后台 token 用于小程序接口。
 func Parse(secret string, tokenString string, tokenType string) (*Claims, error) {
+	// 解析 JWT
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	// 检查 token 是否有效
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token")

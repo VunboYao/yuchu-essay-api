@@ -11,9 +11,12 @@ import (
 )
 
 func Setup(cfg *config.Config) *gin.Engine {
+	// 创建 Gin 引擎
 	r := gin.New()
+	// 使用日志记录器、恢复中间件、跨域中间件
 	r.Use(gin.Logger(), gin.Recovery(), middleware.CORS())
 
+	// 创建服务器实例
 	h := handler.NewServer(cfg)
 
 	// Day1：健康检查
@@ -22,8 +25,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// Day3–7：后台管理 API（除 login 外均需 AdminAuth）
 	admin := r.Group("/admin/api/v1")
 	admin.POST("/auth/login", h.AdminLogin)
+	// 在 admin 下再建一个子分组, 用于需要鉴权的接口
 	protectedAdmin := admin.Group("")
-	// 先鉴权，再记录写操作审计日志（Day3）
+	// 先鉴权，再记录写操作审计日志（Day3）, 鉴权中间件和审计日志中间件
 	protectedAdmin.Use(middleware.AdminAuth(cfg), middleware.AdminOperationLog())
 	{
 		protectedAdmin.GET("/stats/overview", h.StatsOverview)

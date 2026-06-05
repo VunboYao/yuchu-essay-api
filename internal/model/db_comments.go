@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -50,8 +51,10 @@ func ApplyTableComments(db *gorm.DB) error {
 		return fmt.Errorf("database is not initialized")
 	}
 	for _, e := range tableCommentEntries {
-		sql := fmt.Sprintf("ALTER TABLE `%s` COMMENT = ?", e.table)
-		if err := db.Exec(sql, e.comment).Error; err != nil {
+		// DDL 不支持占位符，须内联 COMMENT 并转义单引号
+		escaped := strings.ReplaceAll(e.comment, "'", "''")
+		sql := fmt.Sprintf("ALTER TABLE `%s` COMMENT = '%s'", e.table, escaped)
+		if err := db.Exec(sql).Error; err != nil {
 			return fmt.Errorf("comment table %s: %w", e.table, err)
 		}
 	}

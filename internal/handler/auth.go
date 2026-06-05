@@ -21,24 +21,30 @@ type adminLoginRequest struct {
 // AdminLogin 后台登录：校验启用状态管理员 + bcrypt 密码，签发 admin JWT。
 func (s *Server) AdminLogin(c *gin.Context) {
 	var req adminLoginRequest
+	// 绑定请求参数
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
 
 	var admin model.Admin
+	// 查询启用状态的管理员
 	if err := database.DB.Where("username = ? AND status = ?", req.Username, model.StatusEnabled).First(&admin).Error; err != nil {
 		response.Unauthorized(c, "invalid username or password")
 		return
 	}
+	// 比较密码
 	if err := bcrypt.CompareHashAndPassword([]byte(admin.PasswordHash), []byte(req.Password)); err != nil {
 		response.Unauthorized(c, "invalid username or password")
 		return
 	}
 
+	// 更新最近登录时间
 	now := time.Now()
+	// 更新最近登录时间
 	database.DB.Model(&admin).Update("last_login_at", &now)
 
+	// 签发管理员 JWT
 	token, err := jwtutil.SignAdmin(s.Config.JWT.Secret, s.Config.JWT.Issuer, admin.ID, admin.Username, admin.Role)
 	if err != nil {
 		response.ServerError(c, "failed to sign token")
