@@ -32,10 +32,13 @@ func (r TaxonomyUnitWriteRequest) normalize() (TaxonomyUnit, error) {
 	if version == "" {
 		version = DefaultTextbookVersion
 	}
-	// 学期
+	// 学期须为上册/下册之一
 	semester := strings.TrimSpace(r.Semester)
 	if semester == "" {
 		return TaxonomyUnit{}, fmt.Errorf("semester is required")
+	}
+	if !ValidSemester(semester) {
+		return TaxonomyUnit{}, fmt.Errorf("invalid semester")
 	}
 	// 年级
 	if r.Grade <= 0 {

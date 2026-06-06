@@ -45,4 +45,18 @@ const (
 
 	// 默认教材版本（统编版）
 	DefaultTextbookVersion = "统编版"
+
+	// 学期册次：上册 / 下册
+	SemesterFirst  = "上册"
+	SemesterSecond = "下册"
 )
+
+// ValidSemester 校验学期是否为 PRD 定义的上册/下册之一。
+func ValidSemester(s string) bool {
+	switch s {
+	case SemesterFirst, SemesterSecond:
+		return true
+	default:
+		return false
+	}
+}

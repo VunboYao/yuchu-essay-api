@@ -56,12 +56,16 @@ func (r ArticleWriteRequest) normalize() (Article, error) {
 	if version == "" {
 		version = DefaultTextbookVersion
 	}
+	semester := strings.TrimSpace(r.Semester)
+	if semester != "" && !ValidSemester(semester) {
+		return Article{}, fmt.Errorf("invalid semester")
+	}
 	return Article{
 		Title:           title,
 		Slug:            strings.TrimSpace(r.Slug),
 		TextbookVersion: version,
 		Grade:           r.Grade,
-		Semester:        strings.TrimSpace(r.Semester),
+		Semester:        semester,
 		Unit:            r.Unit,
 		EssayTopic:      strings.TrimSpace(r.EssayTopic),
 		ContentType:     strings.TrimSpace(r.ContentType),
