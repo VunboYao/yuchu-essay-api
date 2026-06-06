@@ -36,4 +36,7 @@ const (
 
 	// 最大正文图片数量
 	MaxBodyImages = 20
+
+	// 默认教材版本（统编版）
+	DefaultTextbookVersion = "统编版"
 )

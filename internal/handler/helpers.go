@@ -21,7 +21,9 @@ func pageParams(c *gin.Context) (int, int) {
 	return page, pageSize
 }
 
+// paginate 分页查询。
 func paginate(db *gorm.DB, page, pageSize int) *gorm.DB {
+	// 偏移量
 	return db.Offset((page - 1) * pageSize).Limit(pageSize)
 }
 

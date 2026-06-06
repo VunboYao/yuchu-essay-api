@@ -3,6 +3,7 @@ package handler
 
 import (
 	"strconv"
+	"strings"
 
 	"course_server/internal/database"
 	"course_server/internal/model"
@@ -11,25 +12,35 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ListTaxonomyUnits 分页查询教材分类单元。
 func (s *Server) ListTaxonomyUnits(c *gin.Context) {
+	// 分页参数
 	page, pageSize := pageParams(c)
+	// 数据库模型
 	db := database.DB.Model(&model.TaxonomyUnit{})
+	// 年级筛选
 	if grade := c.Query("grade"); grade != "" {
 		db = db.Where("grade = ?", grade)
 	}
+	// 学期筛选
 	if semester := c.Query("semester"); semester != "" {
 		db = db.Where("semester = ?", semester)
 	}
+	// 状态筛选
 	if status := c.Query("status"); status != "" {
 		db = db.Where("status = ?", status)
 	}
+	// 统计总数
 	var total int64
 	db.Count(&total)
+	// 查询列表
 	var list []model.TaxonomyUnit
+	// 分页查询: grade 年级、semester 学期、unit 单元、sort_order 排序权重
 	if err := paginate(db.Order("grade ASC, semester ASC, unit ASC, sort_order DESC"), page, pageSize).Find(&list).Error; err != nil {
 		response.ServerError(c, "failed to list taxonomy units")
 		return
 	}
+	// 返回结果
 	response.Page(c, list, total, page, pageSize)
 }
 
@@ -41,6 +52,10 @@ func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 	}
 	if req.Status == 0 {
 		req.Status = model.StatusEnabled
+	}
+	// 未传教材版本时默认统编版
+	if strings.TrimSpace(req.TextbookVersion) == "" {
+		req.TextbookVersion = model.DefaultTextbookVersion
 	}
 	if err := database.DB.Create(&req).Error; err != nil {
 		response.ServerError(c, "failed to create taxonomy unit")

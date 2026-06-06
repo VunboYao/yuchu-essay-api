@@ -12,7 +12,7 @@ import (
 // TaxonomyUnit 教材分类单元。
 type TaxonomyUnit struct {
 	ID              uint      `gorm:"primaryKey;comment:主键ID" json:"id"`
-	TextbookVersion string    `gorm:"size:40;index;not null;comment:教材版本" json:"textbookVersion"`
+	TextbookVersion string    `gorm:"size:40;index;not null;default:统编版;comment:教材版本" json:"textbookVersion"`
 	Grade           int       `gorm:"index;not null;comment:年级(数字)" json:"grade"`
 	Semester        string    `gorm:"size:20;index;not null;comment:学期" json:"semester"`
 	Unit            int       `gorm:"index;not null;comment:单元序号" json:"unit"`
