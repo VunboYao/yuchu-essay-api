@@ -24,21 +24,11 @@ type TaxonomyUnit struct {
 	UpdatedAt       jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
-// ValidTagType 校验标签类型是否为 PRD 定义的四种之一。
-func ValidTagType(typ string) bool {
-	switch typ {
-	case TagTypeArticle, TagTypeEssay, TagTypeDownload, TagTypeTopic:
-		return true
-	default:
-		return false
-	}
-}
-
 // Tag 标签字典。
 type Tag struct {
 	ID        uint      `gorm:"primaryKey;comment:主键ID" json:"id"`
 	Name      string    `gorm:"size:80;not null;index:idx_tag_name_type,unique;comment:标签名" json:"name"`
-	Type      string    `gorm:"size:40;not null;index:idx_tag_name_type,unique;comment:标签类型" json:"type"`
+	Type      string    `gorm:"size:40;not null;index:idx_tag_name_type,unique;comment:标签分组(后台自定义)" json:"type"`
 	SortOrder int       `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
 	Status    int       `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
 	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
@@ -127,13 +117,12 @@ type EssayExampleTag struct {
 
 // --- 下载资料（Day7）---
 
-// DownloadFile 下载资料；access_type/owner 字段二期接订单权限。
+// DownloadFile 下载资料；access_type 统一表达分类与访问权限，owner 字段二期接订单。
 type DownloadFile struct {
 	ID            uint      `gorm:"primaryKey;comment:主键ID" json:"id"`
 	OwnerType     string    `gorm:"size:40;index;not null;comment:归属类型 article等" json:"ownerType"`
 	OwnerID       uint      `gorm:"index;not null;comment:归属资源ID" json:"ownerId"`
 	FileName      string    `gorm:"size:255;not null;comment:展示文件名" json:"fileName"`
-	Category      string    `gorm:"size:40;index;not null;comment:资料分类 free/courseware等" json:"category"`
 	Tags          string    `gorm:"size:500;comment:标签串(含免费等)" json:"tags"`
 	AccessType    string    `gorm:"size:40;index;not null;comment:访问权限 free/purchase_required等" json:"accessType"`
 	FileType      string    `gorm:"size:40;comment:文件类型 pdf等" json:"fileType"`

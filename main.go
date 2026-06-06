@@ -34,7 +34,7 @@ func main() {
 	if err := database.AutoMigrate(); err != nil {
 		log.Fatalf("auto migrate: %v", err)
 	}
-	// 6. 创建管理员与基础标签
+	// 6. 创建默认管理员
 	if err := database.SeedAdmin(); err != nil {
 		log.Fatalf("seed admin: %v", err)
 	}

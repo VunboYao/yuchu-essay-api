@@ -22,6 +22,11 @@ type CreateTagRequest = TagWriteRequest
 // UpdateTagRequest 更新标签请求。
 type UpdateTagRequest = TagWriteRequest
 
+const (
+	maxTagNameLen = 80
+	maxTagTypeLen = 40
+)
+
 func (r TagWriteRequest) normalize() (name, typ string, err error) {
 	name = strings.TrimSpace(r.Name)
 	typ = strings.TrimSpace(r.Type)
@@ -31,8 +36,11 @@ func (r TagWriteRequest) normalize() (name, typ string, err error) {
 	if typ == "" {
 		return "", "", fmt.Errorf("type is required")
 	}
-	if !ValidTagType(typ) {
-		return "", "", fmt.Errorf("invalid tag type")
+	if len(name) > maxTagNameLen {
+		return "", "", fmt.Errorf("name exceeds max %d", maxTagNameLen)
+	}
+	if len(typ) > maxTagTypeLen {
+		return "", "", fmt.Errorf("type exceeds max %d", maxTagTypeLen)
 	}
 	return name, typ, nil
 }

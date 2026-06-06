@@ -22,10 +22,9 @@ type DownloadLog struct {
 	ID           uint      `gorm:"primaryKey;comment:主键ID" json:"id"`
 	UserID       uint      `gorm:"index;comment:小程序用户ID" json:"userId"`
 	FileID       uint      `gorm:"index;not null;comment:下载资料ID" json:"fileId"`
-	OwnerType    string    `gorm:"size:40;index;comment:归属类型快照" json:"ownerType"`
-	OwnerID      uint      `gorm:"index;comment:归属ID快照" json:"ownerId"`
-	FileCategory string    `gorm:"size:40;index;comment:资料分类快照" json:"fileCategory"`
-	AccessType   string    `gorm:"size:40;index;comment:权限类型快照" json:"accessType"`
+	OwnerType   string    `gorm:"size:40;index;comment:归属类型快照" json:"ownerType"`
+	OwnerID     uint      `gorm:"index;comment:归属ID快照" json:"ownerId"`
+	AccessType  string    `gorm:"size:40;index;comment:权限类型快照" json:"accessType"`
 	SourceScene  string    `gorm:"size:80;index;comment:来源场景" json:"sourceScene"`
 	CreatedAt    jsontime.Time `gorm:"index;comment:下载时间" json:"createdAt"`
 }

@@ -11,7 +11,6 @@ type DownloadFileWriteRequest struct {
 	OwnerType  string `json:"ownerType" binding:"required"`
 	OwnerID    uint   `json:"ownerId" binding:"required"`
 	FileName   string `json:"fileName" binding:"required"`
-	Category   string `json:"category" binding:"required"`
 	Tags       string `json:"tags"`
 	AccessType string `json:"accessType" binding:"required"`
 	FileType   string `json:"fileType"`
@@ -27,15 +26,6 @@ type CreateDownloadFileRequest = DownloadFileWriteRequest
 
 // UpdateDownloadFileRequest 更新下载资料请求。
 type UpdateDownloadFileRequest = DownloadFileWriteRequest
-
-func validDownloadCategory(category string) bool {
-	switch category {
-	case DownloadCategoryFree, DownloadCategoryCourseware, DownloadCategoryMember, DownloadCategoryInternal:
-		return true
-	default:
-		return false
-	}
-}
 
 func validAccessType(accessType string) bool {
 	switch accessType {
@@ -58,13 +48,6 @@ func (r DownloadFileWriteRequest) normalize() (DownloadFile, error) {
 	if fileName == "" {
 		return DownloadFile{}, fmt.Errorf("fileName is required")
 	}
-	category := strings.TrimSpace(r.Category)
-	if category == "" {
-		return DownloadFile{}, fmt.Errorf("category is required")
-	}
-	if !validDownloadCategory(category) {
-		return DownloadFile{}, fmt.Errorf("invalid category")
-	}
 	accessType := strings.TrimSpace(r.AccessType)
 	if accessType == "" {
 		return DownloadFile{}, fmt.Errorf("accessType is required")
@@ -80,7 +63,6 @@ func (r DownloadFileWriteRequest) normalize() (DownloadFile, error) {
 		OwnerType:  ownerType,
 		OwnerID:    r.OwnerID,
 		FileName:   fileName,
-		Category:   category,
 		Tags:       strings.TrimSpace(r.Tags),
 		AccessType: accessType,
 		FileType:   strings.TrimSpace(r.FileType),
@@ -125,7 +107,6 @@ func (f DownloadFile) UpdateMap() map[string]interface{} {
 		"owner_type":  f.OwnerType,
 		"owner_id":    f.OwnerID,
 		"file_name":   f.FileName,
-		"category":    f.Category,
 		"tags":        f.Tags,
 		"access_type": f.AccessType,
 		"file_type":   f.FileType,

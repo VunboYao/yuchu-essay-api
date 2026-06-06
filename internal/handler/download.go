@@ -23,9 +23,6 @@ func (s *Server) ListDownloadFiles(c *gin.Context) {
 	if ownerID := c.Query("ownerId"); ownerID != "" {
 		db = db.Where("owner_id = ?", ownerID)
 	}
-	if category := c.Query("category"); category != "" {
-		db = db.Where("category = ?", category)
-	}
 	if accessType := c.Query("accessType"); accessType != "" {
 		db = db.Where("access_type = ?", accessType)
 	}
@@ -108,13 +105,12 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 	userID := currentAuthID(c)
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&model.DownloadLog{
-			UserID:       userID,
-			FileID:       file.ID,
-			OwnerType:    file.OwnerType,
-			OwnerID:      file.OwnerID,
-			FileCategory: file.Category,
-			AccessType:   file.AccessType,
-			SourceScene:  c.Query("sourceScene"),
+			UserID:      userID,
+			FileID:      file.ID,
+			OwnerType:   file.OwnerType,
+			OwnerID:     file.OwnerID,
+			AccessType:  file.AccessType,
+			SourceScene: c.Query("sourceScene"),
 		}).Error; err != nil {
 			return err
 		}

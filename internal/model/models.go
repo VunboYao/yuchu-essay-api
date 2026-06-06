@@ -18,13 +18,7 @@ const (
 	ArticleStatusDraft     = 0
 	ArticleStatusPublished = 1
 
-	// 下载分类常量：免费资料 课件资料 会员资料 内部资料
-	DownloadCategoryFree       = "free"
-	DownloadCategoryCourseware = "courseware"
-	DownloadCategoryMember     = "member"
-	DownloadCategoryInternal   = "internal"
-
-	// 下载权限常量：免费 付费 会员 内部
+	// 下载权限常量（资料分类与访问权限统一由此字段表达）：免费 付费 会员 内部
 	AccessTypeFree             = "free"
 	AccessTypePurchaseRequired = "purchase_required"
 	AccessTypeMemberOnly       = "member_only"
@@ -39,12 +33,6 @@ const (
 	// 收藏/分享/浏览等行为的目标类型：文章 作文
 	TargetTypeArticle = "article"
 	TargetTypeEssay   = "essay"
-
-	// 标签类型：article 文章 essay 范文 download 下载 topic 主题
-	TagTypeArticle  = "article"
-	TagTypeEssay    = "essay"
-	TagTypeDownload = "download"
-	TagTypeTopic    = "topic"
 
 	// 最大正文图片数量
 	MaxBodyImages = 20
