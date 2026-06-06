@@ -30,6 +30,12 @@ const (
 	AccessTypeMemberOnly       = "member_only"
 	AccessTypeInternal         = "internal" // 一期一律拒绝公开下载签名
 
+	// 文章查看权限常量（与下载权限是两条独立权限线）：
+	// 一期固定 free（全部免费查看），member_only/purchase_required 为二期预留容错。
+	ViewAccessFree             = "free"
+	ViewAccessMemberOnly       = "member_only"
+	ViewAccessPurchaseRequired = "purchase_required"
+
 	// 收藏/分享/浏览等行为的目标类型：文章 作文
 	TargetTypeArticle = "article"
 	TargetTypeEssay   = "essay"
@@ -55,6 +61,16 @@ const (
 func ValidSemester(s string) bool {
 	switch s {
 	case SemesterFirst, SemesterSecond:
+		return true
+	default:
+		return false
+	}
+}
+
+// ValidViewAccessType 校验文章查看权限是否为预留的三种之一（一期仅用 free）。
+func ValidViewAccessType(t string) bool {
+	switch t {
+	case ViewAccessFree, ViewAccessMemberOnly, ViewAccessPurchaseRequired:
 		return true
 	default:
 		return false

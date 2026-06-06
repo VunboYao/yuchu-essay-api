@@ -22,6 +22,7 @@ type ArticleWriteRequest struct {
 	Summary         string   `json:"summary"`
 	CoverImg        string   `json:"coverImg"`
 	BodyImages      []string `json:"bodyImages"`
+	ViewAccessType  string   `json:"viewAccessType"`
 	Status          *int     `json:"status"`
 	IsRecommended   bool     `json:"isRecommended"`
 	IsHot           bool     `json:"isHot"`
@@ -60,6 +61,14 @@ func (r ArticleWriteRequest) normalize() (Article, error) {
 	if semester != "" && !ValidSemester(semester) {
 		return Article{}, fmt.Errorf("invalid semester")
 	}
+	// 查看权限：未传默认 free（一期文章全部免费查看）；非法值拒绝。member_only/purchase_required 为二期预留。
+	viewAccess := strings.TrimSpace(r.ViewAccessType)
+	if viewAccess == "" {
+		viewAccess = ViewAccessFree
+	}
+	if !ValidViewAccessType(viewAccess) {
+		return Article{}, fmt.Errorf("invalid viewAccessType")
+	}
 	return Article{
 		Title:           title,
 		Slug:            strings.TrimSpace(r.Slug),
@@ -73,6 +82,7 @@ func (r ArticleWriteRequest) normalize() (Article, error) {
 		Summary:         strings.TrimSpace(r.Summary),
 		CoverImg:        strings.TrimSpace(r.CoverImg),
 		BodyImages:      r.BodyImages,
+		ViewAccessType:  viewAccess,
 		IsRecommended:   r.IsRecommended,
 		IsHot:           r.IsHot,
 		SortOrder:       r.SortOrder,
@@ -122,6 +132,7 @@ func (a Article) UpdateMap() map[string]interface{} {
 		"summary":          a.Summary,
 		"cover_img":        a.CoverImg,
 		"body_images":      a.BodyImages,
+		"view_access_type": a.ViewAccessType,
 		"status":           a.Status,
 		"is_recommended":   a.IsRecommended,
 		"is_hot":           a.IsHot,

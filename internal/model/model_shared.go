@@ -62,6 +62,7 @@ type Article struct {
 	Summary         string         `gorm:"size:500;comment:摘要" json:"summary"`
 	CoverImg        string         `gorm:"size:500;comment:封面图URL" json:"coverImg"`
 	BodyImages      []string       `gorm:"serializer:json;type:json;comment:正文图片URL列表(JSON)" json:"bodyImages,omitempty"`
+	ViewAccessType  string         `gorm:"size:40;index;not null;default:free;comment:查看权限 free(一期固定)/member_only/purchase_required(二期预留)" json:"viewAccessType"`
 	Status          int            `gorm:"index;not null;default:0;comment:状态 0草稿 1已发布" json:"status"`
 	IsRecommended   bool           `gorm:"index;not null;default:false;comment:是否推荐" json:"isRecommended"`
 	IsHot           bool           `gorm:"index;not null;default:false;comment:是否热门" json:"isHot"`
