@@ -45,20 +45,24 @@ func (s *Server) ListTaxonomyUnits(c *gin.Context) {
 
 // CreateTaxonomyUnit 创建教材分类单元
 func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
+	// 绑定请求参数
 	var req model.CreateTaxonomyUnitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验请求参数
 	unit, err := req.ValidateForCreate()
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验分类单元重复
 	if err := model.CheckTaxonomyUnitDuplicate(database.DB, unit, 0); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 写入数据库
 	if err := database.DB.Create(&unit).Error; err != nil {
 		response.ServerError(c, "failed to create taxonomy unit")
 		return
@@ -68,26 +72,32 @@ func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 
 // UpdateTaxonomyUnit 更新教材分类单元
 func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
+	// 获取请求参数
 	id, _ := strconv.Atoi(c.Param("id"))
+	// 查询分类单元
 	var item model.TaxonomyUnit
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "taxonomy unit not found")
 		return
 	}
+	// 绑定请求参数
 	var req model.UpdateTaxonomyUnitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验请求参数
 	unit, err := req.ValidateForUpdate(item)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验分类单元重复: 排除当前分类单元本身
 	if err := model.CheckTaxonomyUnitDuplicate(database.DB, unit, item.ID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 更新数据库
 	if err := UpdateAndReload(database.DB, &item, unit.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update taxonomy unit")
 		return
@@ -97,6 +107,7 @@ func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
 
 // 标签: 列表查询
 func (s *Server) ListTags(c *gin.Context) {
+	// 分页参数
 	page, pageSize := pageParams(c)
 	db := database.DB.Model(&model.Tag{})
 	// 过滤 — type 精确匹配，keyword 模糊搜索
@@ -106,6 +117,7 @@ func (s *Server) ListTags(c *gin.Context) {
 	if keyword := c.Query("keyword"); keyword != "" {
 		db = db.Where("name LIKE ?", "%"+keyword+"%")
 	}
+	// 统计总数
 	var total int64
 	db.Count(&total)
 	var list []model.Tag
@@ -119,20 +131,24 @@ func (s *Server) ListTags(c *gin.Context) {
 
 // 标签: 创建
 func (s *Server) CreateTag(c *gin.Context) {
+	// 绑定请求参数
 	var req model.CreateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验请求参数
 	tag, err := req.ValidateForCreate()
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验标签重复
 	if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, 0); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 写入数据库
 	if err := database.DB.Create(&tag).Error; err != nil {
 		response.ServerError(c, "failed to create tag")
 		return
@@ -142,26 +158,32 @@ func (s *Server) CreateTag(c *gin.Context) {
 
 // 标签: 更新
 func (s *Server) UpdateTag(c *gin.Context) {
+	// 获取请求参数
 	id, _ := strconv.Atoi(c.Param("id"))
+	// 查询标签
 	var item model.Tag
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "tag not found")
 		return
 	}
+	// 绑定请求参数
 	var req model.UpdateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验请求参数
 	tag, err := req.ValidateForUpdate(item)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验标签重复: 排除当前标签本身
 	if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, item.ID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 更新数据库
 	if err := UpdateAndReload(database.DB, &item, tag.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update tag")
 		return
