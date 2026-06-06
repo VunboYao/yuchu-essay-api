@@ -241,6 +241,7 @@ headers: { Authorization: `Bearer ${token}` }
 
 ### 其它约定
 
+- API 时间字段（`createdAt`、`updatedAt`、`publishedAt` 等）统一返回东八区字符串 `yyyy-MM-dd HH:mm:ss`；存储仍为 MySQL `datetime`（类型见 `internal/pkg/jsontime`）
 - 状态与权限常量定义在 `models.go`，禁止魔法数字/字符串散落在 handler
 - 查询字段须加 index：`openid`、`slug`、`target_type/target_id`、`created_at` 及分类筛选字段
 - 种子数据：默认管理员 `admin/admin123`（`internal/database/seed.go`）

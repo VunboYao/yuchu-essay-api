@@ -4,7 +4,8 @@ package model
 import (
 	"fmt"
 	"strings"
-	"time"
+
+	"course_server/internal/pkg/jsontime"
 )
 
 // --- 分类与标签（Day4）---
@@ -19,8 +20,8 @@ type TaxonomyUnit struct {
 	UnitTitle       string    `gorm:"size:120;comment:单元标题" json:"unitTitle"`
 	SortOrder       int       `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
 	Status          int       `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
-	CreatedAt       time.Time `gorm:"comment:创建时间" json:"createdAt"`
-	UpdatedAt       time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt       jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt       jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // ValidTagType 校验标签类型是否为 PRD 定义的四种之一。
@@ -40,8 +41,8 @@ type Tag struct {
 	Type      string    `gorm:"size:40;not null;index:idx_tag_name_type,unique;comment:标签类型" json:"type"`
 	SortOrder int       `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
 	Status    int       `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
-	CreatedAt time.Time `gorm:"comment:创建时间" json:"createdAt"`
-	UpdatedAt time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // --- 作文专题（Day5）---
@@ -69,9 +70,9 @@ type Article struct {
 	ShareCount      int64          `gorm:"not null;default:0;comment:分享次数(冗余计数)" json:"shareCount"`
 	FavoriteCount   int64          `gorm:"not null;default:0;comment:收藏次数(冗余计数)" json:"favoriteCount"`
 	DownloadCount   int64          `gorm:"not null;default:0;comment:下载次数(冗余计数)" json:"downloadCount"`
-	PublishedAt     *time.Time     `gorm:"index;comment:发布时间" json:"publishedAt"`
-	CreatedAt       time.Time      `gorm:"index;comment:创建时间" json:"createdAt"`
-	UpdatedAt       time.Time      `gorm:"comment:更新时间" json:"updatedAt"`
+	PublishedAt     *jsontime.Time `gorm:"index;comment:发布时间" json:"publishedAt"`
+	CreatedAt       jsontime.Time      `gorm:"index;comment:创建时间" json:"createdAt"`
+	UpdatedAt       jsontime.Time      `gorm:"comment:更新时间" json:"updatedAt"`
 	Essays          []EssayExample `gorm:"foreignKey:ArticleID" json:"essays,omitempty"`
 }
 
@@ -93,7 +94,7 @@ type ArticleTag struct {
 	ID        uint      `gorm:"primaryKey;comment:主键ID" json:"id"`
 	ArticleID uint      `gorm:"uniqueIndex:idx_article_tag;not null;comment:文章ID" json:"articleId"`
 	TagID     uint      `gorm:"uniqueIndex:idx_article_tag;not null;comment:标签ID" json:"tagId"`
-	CreatedAt time.Time `gorm:"comment:创建时间" json:"createdAt"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
 }
 
 // --- 优秀作文（Day6）---
@@ -111,8 +112,8 @@ type EssayExample struct {
 	SortOrder     int       `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
 	ViewCount     int64     `gorm:"not null;default:0;comment:浏览次数(冗余计数)" json:"viewCount"`
 	FavoriteCount int64     `gorm:"not null;default:0;comment:收藏次数(冗余计数)" json:"favoriteCount"`
-	CreatedAt     time.Time `gorm:"index;comment:创建时间" json:"createdAt"`
-	UpdatedAt     time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt     jsontime.Time `gorm:"index;comment:创建时间" json:"createdAt"`
+	UpdatedAt     jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // EssayExampleTag 范文-标签关联；关联 CRUD API 待实现。
@@ -120,7 +121,7 @@ type EssayExampleTag struct {
 	ID        uint      `gorm:"primaryKey;comment:主键ID" json:"id"`
 	EssayID   uint      `gorm:"uniqueIndex:idx_essay_tag;not null;comment:范文ID" json:"essayId"`
 	TagID     uint      `gorm:"uniqueIndex:idx_essay_tag;not null;comment:标签ID" json:"tagId"`
-	CreatedAt time.Time `gorm:"comment:创建时间" json:"createdAt"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
 }
 
 // --- 下载资料（Day7）---
@@ -141,8 +142,8 @@ type DownloadFile struct {
 	DownloadCount int64     `gorm:"not null;default:0;comment:下载次数(冗余计数)" json:"downloadCount"`
 	SortOrder     int       `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
 	Status        int       `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
-	CreatedAt     time.Time `gorm:"index;comment:创建时间" json:"createdAt"`
-	UpdatedAt     time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt     jsontime.Time `gorm:"index;comment:创建时间" json:"createdAt"`
+	UpdatedAt     jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // --- 运营配置（后台可配，小程序读取）---
@@ -157,8 +158,8 @@ type AdSlot struct {
 	AdUnitID  string    `gorm:"size:120;comment:微信广告单元ID" json:"adUnitId"`
 	Status    int       `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
 	SortOrder int       `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
-	CreatedAt time.Time `gorm:"comment:创建时间" json:"createdAt"`
-	UpdatedAt time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // HomeBlock 首页区块配置。
@@ -170,8 +171,8 @@ type HomeBlock struct {
 	ConfigJSON  string    `gorm:"type:text;comment:区块配置JSON" json:"configJson"`
 	SortOrder   int       `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
 	Status      int       `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
-	CreatedAt   time.Time `gorm:"comment:创建时间" json:"createdAt"`
-	UpdatedAt   time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt   jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt   jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // OfficialAccountConfig 公众号导流配置。
@@ -183,6 +184,6 @@ type OfficialAccountConfig struct {
 	QrcodeURL   string    `gorm:"size:500;comment:二维码图片URL" json:"qrcodeUrl"`
 	LinkText    string    `gorm:"size:120;comment:引导链接文案" json:"linkText"`
 	Status      int       `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
-	CreatedAt   time.Time `gorm:"comment:创建时间" json:"createdAt"`
-	UpdatedAt   time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt   jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt   jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }

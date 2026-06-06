@@ -1,7 +1,7 @@
 // 【小程序】微信用户与端上行为日志表（一期）。
 package model
 
-import "time"
+import "course_server/internal/pkg/jsontime"
 
 // User 微信用户；OpenID 唯一，UnionID 预留多端打通。
 type User struct {
@@ -13,8 +13,8 @@ type User struct {
 	SourceScene string    `gorm:"size:80;index;comment:注册/访问场景" json:"sourceScene"`
 	Status      int       `gorm:"not null;default:1;comment:状态 0禁用 1正常" json:"status"`
 	BanReason   string    `gorm:"size:255;comment:封禁原因" json:"banReason"`
-	CreatedAt   time.Time `gorm:"index;comment:注册时间" json:"createdAt"`
-	UpdatedAt   time.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	CreatedAt   jsontime.Time `gorm:"index;comment:注册时间" json:"createdAt"`
+	UpdatedAt   jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // DownloadLog 用户下载行为日志。
@@ -27,7 +27,7 @@ type DownloadLog struct {
 	FileCategory string    `gorm:"size:40;index;comment:资料分类快照" json:"fileCategory"`
 	AccessType   string    `gorm:"size:40;index;comment:权限类型快照" json:"accessType"`
 	SourceScene  string    `gorm:"size:80;index;comment:来源场景" json:"sourceScene"`
-	CreatedAt    time.Time `gorm:"index;comment:下载时间" json:"createdAt"`
+	CreatedAt    jsontime.Time `gorm:"index;comment:下载时间" json:"createdAt"`
 }
 
 // Favorite 用户收藏。
@@ -36,7 +36,7 @@ type Favorite struct {
 	UserID     uint      `gorm:"uniqueIndex:idx_user_fav;not null;comment:用户ID" json:"userId"`
 	TargetType string    `gorm:"size:40;uniqueIndex:idx_user_fav;not null;comment:收藏目标类型 article/essay" json:"targetType"`
 	TargetID   uint      `gorm:"uniqueIndex:idx_user_fav;not null;comment:收藏目标ID" json:"targetId"`
-	CreatedAt  time.Time `gorm:"index;comment:收藏时间" json:"createdAt"`
+	CreatedAt  jsontime.Time `gorm:"index;comment:收藏时间" json:"createdAt"`
 }
 
 // ViewLog 浏览日志。
@@ -47,7 +47,7 @@ type ViewLog struct {
 	TargetID    uint      `gorm:"index;comment:内容ID" json:"targetId"`
 	PagePath    string    `gorm:"size:255;index;comment:小程序页面路径" json:"pagePath"`
 	SourceScene string    `gorm:"size:80;index;comment:来源场景" json:"sourceScene"`
-	CreatedAt   time.Time `gorm:"index;comment:浏览时间" json:"createdAt"`
+	CreatedAt   jsontime.Time `gorm:"index;comment:浏览时间" json:"createdAt"`
 }
 
 // SearchLog 搜索日志。
@@ -57,7 +57,7 @@ type SearchLog struct {
 	Keyword     string    `gorm:"size:120;index;not null;comment:搜索关键词" json:"keyword"`
 	ResultCount int       `gorm:"comment:命中结果数" json:"resultCount"`
 	SourceScene string    `gorm:"size:80;index;comment:来源场景" json:"sourceScene"`
-	CreatedAt   time.Time `gorm:"index;comment:搜索时间" json:"createdAt"`
+	CreatedAt   jsontime.Time `gorm:"index;comment:搜索时间" json:"createdAt"`
 }
 
 // ShareLog 分享日志。
@@ -68,7 +68,7 @@ type ShareLog struct {
 	TargetID     uint      `gorm:"index;comment:分享内容ID" json:"targetId"`
 	ShareChannel string    `gorm:"size:40;index;comment:分享渠道" json:"shareChannel"`
 	SourceScene  string    `gorm:"size:80;index;comment:来源场景" json:"sourceScene"`
-	CreatedAt    time.Time `gorm:"index;comment:分享时间" json:"createdAt"`
+	CreatedAt    jsontime.Time `gorm:"index;comment:分享时间" json:"createdAt"`
 }
 
 // AdEvent 广告行为日志。
@@ -80,5 +80,5 @@ type AdEvent struct {
 	PagePath   string    `gorm:"size:255;index;comment:页面路径" json:"pagePath"`
 	TargetType string    `gorm:"size:40;index;comment:关联内容类型" json:"targetType"`
 	TargetID   uint      `gorm:"index;comment:关联内容ID" json:"targetId"`
-	CreatedAt  time.Time `gorm:"index;comment:事件时间" json:"createdAt"`
+	CreatedAt  jsontime.Time `gorm:"index;comment:事件时间" json:"createdAt"`
 }
