@@ -35,9 +35,10 @@ func Ptr(t time.Time) *Time {
 	return &tt
 }
 
-// GormDataType 告知 GORM 使用 datetime 列类型。
+// GormDataType 须返回 "time"，GORM 才会对 CreatedAt/UpdatedAt 自动写入时间戳；
+// MySQL 驱动仍映射为 datetime 列（见 gorm.io/driver/mysql getSchemaTimeType）。
 func (Time) GormDataType() string {
-	return "datetime"
+	return "time"
 }
 
 // MarshalJSON 序列化为东八区 Layout 字符串；零值为 null。
