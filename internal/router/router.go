@@ -36,8 +36,11 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 		protectedAdmin.GET("/operation-logs", h.ListOperationLogs)
 
+		// 教材分类单元: 查询
 		protectedAdmin.GET("/taxonomy-units", h.ListTaxonomyUnits)
+		// 教材分类单元: 创建
 		protectedAdmin.POST("/taxonomy-units", h.CreateTaxonomyUnit)
+		// 教材分类单元: 更新
 		protectedAdmin.PUT("/taxonomy-units/:id", h.UpdateTaxonomyUnit)
 
 		protectedAdmin.GET("/tags", h.ListTags)

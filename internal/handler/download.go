@@ -40,19 +40,21 @@ func (s *Server) ListDownloadFiles(c *gin.Context) {
 }
 
 func (s *Server) CreateDownloadFile(c *gin.Context) {
-	var req model.DownloadFile
+	var req model.CreateDownloadFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if req.Status == 0 {
-		req.Status = model.StatusEnabled
+	file, err := req.ValidateForCreate()
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
 	}
-	if err := database.DB.Create(&req).Error; err != nil {
+	if err := database.DB.Create(&file).Error; err != nil {
 		response.ServerError(c, "failed to create download file")
 		return
 	}
-	response.Success(c, req)
+	response.Success(c, file)
 }
 
 func (s *Server) UpdateDownloadFile(c *gin.Context) {
@@ -62,13 +64,17 @@ func (s *Server) UpdateDownloadFile(c *gin.Context) {
 		response.NotFound(c, "download file not found")
 		return
 	}
-	var req model.DownloadFile
+	var req model.UpdateDownloadFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	req.ID = item.ID
-	if err := database.DB.Model(&item).Updates(req).Error; err != nil {
+	file, err := req.ValidateForUpdate(item)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := UpdateAndReload(database.DB, &item, file.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update download file")
 		return
 	}

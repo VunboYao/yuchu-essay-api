@@ -3,7 +3,6 @@ package handler
 
 import (
 	"strconv"
-	"strings"
 
 	"course_server/internal/database"
 	"course_server/internal/model"
@@ -44,26 +43,30 @@ func (s *Server) ListTaxonomyUnits(c *gin.Context) {
 	response.Page(c, list, total, page, pageSize)
 }
 
+// CreateTaxonomyUnit 创建教材分类单元
 func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
-	var req model.TaxonomyUnit
+	var req model.CreateTaxonomyUnitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if req.Status == 0 {
-		req.Status = model.StatusEnabled
+	unit, err := req.ValidateForCreate()
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
 	}
-	// 未传教材版本时默认统编版
-	if strings.TrimSpace(req.TextbookVersion) == "" {
-		req.TextbookVersion = model.DefaultTextbookVersion
+	if err := model.CheckTaxonomyUnitDuplicate(database.DB, unit, 0); err != nil {
+		response.BadRequest(c, err.Error())
+		return
 	}
-	if err := database.DB.Create(&req).Error; err != nil {
+	if err := database.DB.Create(&unit).Error; err != nil {
 		response.ServerError(c, "failed to create taxonomy unit")
 		return
 	}
-	response.Success(c, req)
+	response.Success(c, unit)
 }
 
+// UpdateTaxonomyUnit 更新教材分类单元
 func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var item model.TaxonomyUnit
@@ -71,22 +74,32 @@ func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
 		response.NotFound(c, "taxonomy unit not found")
 		return
 	}
-	var req model.TaxonomyUnit
+	var req model.UpdateTaxonomyUnitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	req.ID = item.ID
-	if err := database.DB.Model(&item).Updates(req).Error; err != nil {
+	unit, err := req.ValidateForUpdate(item)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := model.CheckTaxonomyUnitDuplicate(database.DB, unit, item.ID); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := UpdateAndReload(database.DB, &item, unit.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update taxonomy unit")
 		return
 	}
 	response.Success(c, item)
 }
 
+// 标签: 列表查询
 func (s *Server) ListTags(c *gin.Context) {
 	page, pageSize := pageParams(c)
 	db := database.DB.Model(&model.Tag{})
+	// 过滤 — type 精确匹配，keyword 模糊搜索
 	if typ := c.Query("type"); typ != "" {
 		db = db.Where("type = ?", typ)
 	}
@@ -96,6 +109,7 @@ func (s *Server) ListTags(c *gin.Context) {
 	var total int64
 	db.Count(&total)
 	var list []model.Tag
+	// 排序查询 — 按 sort_order DESC, id DESC 排序，即权重越大、越新创建的排在前面
 	if err := paginate(db.Order("sort_order DESC, id DESC"), page, pageSize).Find(&list).Error; err != nil {
 		response.ServerError(c, "failed to list tags")
 		return
@@ -103,22 +117,30 @@ func (s *Server) ListTags(c *gin.Context) {
 	response.Page(c, list, total, page, pageSize)
 }
 
+// 标签: 创建
 func (s *Server) CreateTag(c *gin.Context) {
-	var req model.Tag
+	var req model.CreateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if req.Status == 0 {
-		req.Status = model.StatusEnabled
+	tag, err := req.ValidateForCreate()
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
 	}
-	if err := database.DB.Create(&req).Error; err != nil {
+	if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, 0); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := database.DB.Create(&tag).Error; err != nil {
 		response.ServerError(c, "failed to create tag")
 		return
 	}
-	response.Success(c, req)
+	response.Success(c, tag)
 }
 
+// 标签: 更新
 func (s *Server) UpdateTag(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var item model.Tag
@@ -126,13 +148,21 @@ func (s *Server) UpdateTag(c *gin.Context) {
 		response.NotFound(c, "tag not found")
 		return
 	}
-	var req model.Tag
+	var req model.UpdateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	req.ID = item.ID
-	if err := database.DB.Model(&item).Updates(req).Error; err != nil {
+	tag, err := req.ValidateForUpdate(item)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, item.ID); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := UpdateAndReload(database.DB, &item, tag.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update tag")
 		return
 	}

@@ -28,20 +28,25 @@ func (s *Server) ListArticles(c *gin.Context) {
 }
 
 func (s *Server) CreateArticle(c *gin.Context) {
-	var req model.Article
+	var req model.CreateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if err := model.ValidateBodyImages(req.BodyImages); err != nil {
+	article, err := req.ValidateForCreate()
+	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if err := database.DB.Create(&req).Error; err != nil {
+	if err := model.CheckArticleSlugDuplicate(database.DB, article.Slug, 0); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := database.DB.Create(&article).Error; err != nil {
 		response.ServerError(c, "failed to create article")
 		return
 	}
-	response.Success(c, req)
+	response.Success(c, article)
 }
 
 func (s *Server) GetArticle(c *gin.Context) {
@@ -61,21 +66,24 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 		response.NotFound(c, "article not found")
 		return
 	}
-	var req model.Article
+	var req model.UpdateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if err := model.ValidateBodyImages(req.BodyImages); err != nil {
+	article, err := req.ValidateForUpdate(item)
+	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	req.ID = item.ID
-	if err := database.DB.Model(&item).Updates(req).Error; err != nil {
+	if err := model.CheckArticleSlugDuplicate(database.DB, article.Slug, item.ID); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := UpdateAndReload(database.DB, &item, article.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update article")
 		return
 	}
-	database.DB.First(&item, id)
 	response.Success(c, item)
 }
 

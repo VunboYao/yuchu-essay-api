@@ -56,12 +56,16 @@ course_server/
     ├── database/           # MySQL/Redis 连接、AutoMigrate、Seed
     ├── model/              # GORM 模型（models.go 常量 + model_* 分文件）
     │   ├── models.go           # 业务常量
+    │   ├── validate.go         # 通用校验（如 ResolveStatus）
     │   ├── model_shared.go     # 【共用】内容/配置
+    │   ├── *_request.go        # Admin 写操作 Request DTO 与 Validate（见下文）
     │   ├── model_admin.go      # 【后台】
     │   ├── model_miniprogram.go  # 【小程序】
     │   ├── model_order.go      # 【二期】订单占位
     │   └── db_comments.go      # 表级 COMMENT
     ├── handler/            # HTTP 处理（按领域分文件）
+    │   ├── helpers.go          # 分页、鉴权上下文
+    │   └── helpers_write.go    # UpdateAndReload 等写操作辅助
     ├── middleware/         # CORS、AdminAuth、UserAuth
     ├── router/             # 路由注册（唯一入口）
     └── pkg/
@@ -259,9 +263,68 @@ headers: { Authorization: `Bearer ${token}` }
 
 > 历史 `article_sections` 表已废弃，一期不再使用。
 
+## Admin 写操作约定
+
+后台 Create / Update / Upsert 曾直接使用 `ShouldBindJSON(&model.Article)` 等方式绑定 GORM 实体，存在三类常见问题。现已统一改为 **Request DTO + model 层校验 + 通用写库辅助**，新接口必须遵循；Agent 约束见 [AGENTS.md §6](./AGENTS.md#6-admin-写操作约定)。
+
+### 常见问题
+
+| 类型 | 表现 | 根因 |
+|------|------|------|
+| **脏数据** | 客户端可传 `id`、`createdAt`，或篡改 `viewCount` 等计数 | 请求体直接绑定数据库 struct |
+| **必输缺失** | `{}` 或空字符串能入库（如 `grade=0`、`semester=""`） | GORM `not null` 不等于业务必填；`int` 零值为 `0` |
+| **status / 零值更新** | 创建时无法设 `status=0`；更新时禁用、清零、关推荐改不动 | `if status==0 { status=1 }` 混淆「未传」与「传 0」；`Updates(struct)` 跳过零值 |
+
+其中 **status** 字段因 `0` 有业务含义（禁用/草稿），须用 `*int` 区分「JSON 未传字段（`nil`）」与「显式传 `0`」。
+
+### 解决方案
+
+**1. Request DTO（`internal/model/*_request.go`）**
+
+- **禁止**绑定 GORM 实体（如 `model.Tag`、`model.Article`）
+- **允许**绑定 Request DTO（如 `model.CreateTagRequest`）——二者同在 `model` 包，但 DTO 不含 `id`、时间戳、冗余计数
+- 已落地文件示例：`tag_request.go`、`taxonomy_unit_request.go`、`article_request.go`、`download_file_request.go`、`essay_example_request.go`、`config_request.go`
+
+**2. 校验集中在 model 包**
+
+```go
+tag, err := req.ValidateForCreate()              // 创建
+tag, err := req.ValidateForUpdate(existing)      // 更新
+status, err := model.ResolveStatus(ptr, default) // 可选 status
+```
+
+**3. 写库辅助（`internal/handler/helpers_write.go`）**
+
+- 更新使用 `map[string]interface{}` + `UpdateAndReload`，避免零值被跳过、响应返回旧数据
+- 运营配置 Upsert 按唯一键（`blockKey` / `slotKey` / `scene`）查找后 Create 或 Update，不依赖客户端传 `id`
+
+**4. handler 模板（薄层）**
+
+```go
+var req model.CreateTagRequest
+if err := c.ShouldBindJSON(&req); err != nil { ... }
+tag, err := req.ValidateForCreate()
+if err != nil { response.BadRequest(c, err.Error()); return }
+if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, 0); err != nil { ... }
+database.DB.Create(&tag)
+```
+
+### 已迁移接口
+
+| 模块 | Handler | Request 文件 |
+|------|---------|--------------|
+| 标签 | `CreateTag` / `UpdateTag` | `tag_request.go` |
+| 分类单元 | `CreateTaxonomyUnit` / `UpdateTaxonomyUnit` | `taxonomy_unit_request.go` |
+| 作文专题 | `CreateArticle` / `UpdateArticle` | `article_request.go` |
+| 下载资料 | `CreateDownloadFile` / `UpdateDownloadFile` | `download_file_request.go` |
+| 优秀作文 | `CreateEssayExample` / `UpdateEssayExample` | `essay_example_request.go` |
+| 运营配置 | `UpsertHomeBlock` / `UpsertAdSlot` / `UpsertOfficialAccountConfig` | `config_request.go` |
+
+未迁移：`track.go` 埋点、`auth.go` 登录（服务端构造数据，风险较低）。`UpdateArticleStatus` 等专用接口保持独立 struct。
+
 ## 代码风格
 
-- 参数绑定：`c.ShouldBindJSON` + `binding:"required"`
+- 参数绑定：`c.ShouldBindJSON` + `binding:"required"`；**Admin 写操作**须用 Request DTO，见上文 [Admin 写操作约定](#admin-写操作约定)
 - DB 访问：全局 `database.DB`，复杂写操作用 `Transaction`
 - 错误消息：英文简短描述（如 `"failed to list articles"`）
 - 复用 `pageParams` / `paginate` / `response.*`，不新增 service/repository 层除非明确要求重构

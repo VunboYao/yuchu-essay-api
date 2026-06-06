@@ -37,19 +37,25 @@ func (s *Server) ListEssayExamples(c *gin.Context) {
 }
 
 func (s *Server) CreateEssayExample(c *gin.Context) {
-	var req model.EssayExample
+	var req model.CreateEssayExampleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if req.Status == 0 {
-		req.Status = model.StatusEnabled
+	essay, err := req.ValidateForCreate()
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
 	}
-	if err := database.DB.Create(&req).Error; err != nil {
+	if err := model.CheckEssayArticleExists(database.DB, essay.ArticleID); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := database.DB.Create(&essay).Error; err != nil {
 		response.ServerError(c, "failed to create essay example")
 		return
 	}
-	response.Success(c, req)
+	response.Success(c, essay)
 }
 
 func (s *Server) UpdateEssayExample(c *gin.Context) {
@@ -59,13 +65,21 @@ func (s *Server) UpdateEssayExample(c *gin.Context) {
 		response.NotFound(c, "essay example not found")
 		return
 	}
-	var req model.EssayExample
+	var req model.UpdateEssayExampleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	req.ID = item.ID
-	if err := database.DB.Model(&item).Updates(req).Error; err != nil {
+	essay, err := req.ValidateForUpdate(item)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := model.CheckEssayArticleExists(database.DB, essay.ArticleID); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := UpdateAndReload(database.DB, &item, essay.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update essay example")
 		return
 	}

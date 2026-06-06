@@ -2,13 +2,16 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
+	"strings"
 
 	"course_server/internal/database"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func (s *Server) ListHomeBlocks(c *gin.Context) {
@@ -21,19 +24,38 @@ func (s *Server) ListHomeBlocks(c *gin.Context) {
 }
 
 func (s *Server) UpsertHomeBlock(c *gin.Context) {
-	var req model.HomeBlock
+	var req model.UpsertHomeBlockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if req.Status == 0 {
-		req.Status = model.StatusEnabled
-	}
-	if err := database.DB.Save(&req).Error; err != nil {
+	existing, findErr := model.FindHomeBlockByKey(database.DB, strings.TrimSpace(req.BlockKey))
+	if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
 		response.ServerError(c, "failed to save home block")
 		return
 	}
-	response.Success(c, req)
+	defaultStatus := model.StatusEnabled
+	if findErr == nil {
+		defaultStatus = existing.Status
+	}
+	block, err := req.Validate(defaultStatus)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if errors.Is(findErr, gorm.ErrRecordNotFound) {
+		if err := database.DB.Create(&block).Error; err != nil {
+			response.ServerError(c, "failed to save home block")
+			return
+		}
+		response.Success(c, block)
+		return
+	}
+	if err := UpdateAndReload(database.DB, &existing, block.UpdateMap()); err != nil {
+		response.ServerError(c, "failed to save home block")
+		return
+	}
+	response.Success(c, existing)
 }
 
 func (s *Server) ListAdSlots(c *gin.Context) {
@@ -46,19 +68,38 @@ func (s *Server) ListAdSlots(c *gin.Context) {
 }
 
 func (s *Server) UpsertAdSlot(c *gin.Context) {
-	var req model.AdSlot
+	var req model.UpsertAdSlotRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if req.Status == 0 {
-		req.Status = model.StatusEnabled
-	}
-	if err := database.DB.Save(&req).Error; err != nil {
+	existing, findErr := model.FindAdSlotByKey(database.DB, strings.TrimSpace(req.SlotKey))
+	if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
 		response.ServerError(c, "failed to save ad slot")
 		return
 	}
-	response.Success(c, req)
+	defaultStatus := model.StatusEnabled
+	if findErr == nil {
+		defaultStatus = existing.Status
+	}
+	slot, err := req.Validate(defaultStatus)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if errors.Is(findErr, gorm.ErrRecordNotFound) {
+		if err := database.DB.Create(&slot).Error; err != nil {
+			response.ServerError(c, "failed to save ad slot")
+			return
+		}
+		response.Success(c, slot)
+		return
+	}
+	if err := UpdateAndReload(database.DB, &existing, slot.UpdateMap()); err != nil {
+		response.ServerError(c, "failed to save ad slot")
+		return
+	}
+	response.Success(c, existing)
 }
 
 func (s *Server) ListOfficialAccountConfigs(c *gin.Context) {
@@ -71,19 +112,38 @@ func (s *Server) ListOfficialAccountConfigs(c *gin.Context) {
 }
 
 func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
-	var req model.OfficialAccountConfig
+	var req model.UpsertOfficialAccountConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if req.Status == 0 {
-		req.Status = model.StatusEnabled
-	}
-	if err := database.DB.Save(&req).Error; err != nil {
+	existing, findErr := model.FindOfficialAccountConfigByScene(database.DB, strings.TrimSpace(req.Scene))
+	if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
 		response.ServerError(c, "failed to save official account config")
 		return
 	}
-	response.Success(c, req)
+	defaultStatus := model.StatusEnabled
+	if findErr == nil {
+		defaultStatus = existing.Status
+	}
+	cfg, err := req.Validate(defaultStatus)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if errors.Is(findErr, gorm.ErrRecordNotFound) {
+		if err := database.DB.Create(&cfg).Error; err != nil {
+			response.ServerError(c, "failed to save official account config")
+			return
+		}
+		response.Success(c, cfg)
+		return
+	}
+	if err := UpdateAndReload(database.DB, &existing, cfg.UpdateMap()); err != nil {
+		response.ServerError(c, "failed to save official account config")
+		return
+	}
+	response.Success(c, existing)
 }
 
 // UploadSTS 封面上传临时凭证（Day7 占位）；需配置 config.yaml 中 oss 后实现真实 STS。

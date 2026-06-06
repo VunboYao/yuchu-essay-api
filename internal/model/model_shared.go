@@ -23,6 +23,16 @@ type TaxonomyUnit struct {
 	UpdatedAt       time.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
+// ValidTagType 校验标签类型是否为 PRD 定义的四种之一。
+func ValidTagType(typ string) bool {
+	switch typ {
+	case TagTypeArticle, TagTypeEssay, TagTypeDownload, TagTypeTopic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Tag 标签字典。
 type Tag struct {
 	ID        uint      `gorm:"primaryKey;comment:主键ID" json:"id"`

@@ -34,6 +34,12 @@ const (
 	TargetTypeArticle = "article"
 	TargetTypeEssay   = "essay"
 
+	// 标签类型：article 文章 essay 范文 download 下载 topic 主题
+	TagTypeArticle  = "article"
+	TagTypeEssay    = "essay"
+	TagTypeDownload = "download"
+	TagTypeTopic    = "topic"
+
 	// 最大正文图片数量
 	MaxBodyImages = 20
 
