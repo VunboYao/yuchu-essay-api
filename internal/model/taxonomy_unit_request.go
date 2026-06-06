@@ -15,7 +15,7 @@ type TaxonomyUnitWriteRequest struct {
 	Semester        string `json:"semester" binding:"required"`
 	Unit            int    `json:"unit" binding:"required"`
 	UnitTitle       string `json:"unitTitle"`
-	SortOrder       int    `json:"sortOrder"`
+	SortOrder       *int   `json:"sortOrder"`
 	Status          *int   `json:"status"`
 }
 
@@ -45,13 +45,17 @@ func (r TaxonomyUnitWriteRequest) normalize() (TaxonomyUnit, error) {
 	if r.Unit <= 0 {
 		return TaxonomyUnit{}, fmt.Errorf("unit must be greater than 0")
 	}
+	sortOrder := 0
+	if r.SortOrder != nil {
+		sortOrder = *r.SortOrder
+	}
 	return TaxonomyUnit{
 		TextbookVersion: version,
 		Grade:           r.Grade,
 		Semester:        semester,
 		Unit:            r.Unit,
 		UnitTitle:       strings.TrimSpace(r.UnitTitle),
-		SortOrder:       r.SortOrder,
+		SortOrder:       sortOrder,
 	}, nil
 }
 
@@ -81,6 +85,10 @@ func (r TaxonomyUnitWriteRequest) ValidateForUpdate(existing TaxonomyUnit) (Taxo
 		return TaxonomyUnit{}, err
 	}
 	unit.Status = status
+	// sortOrder 未传时保留原值
+	if r.SortOrder == nil {
+		unit.SortOrder = existing.SortOrder
+	}
 	return unit, nil
 }
 

@@ -57,6 +57,10 @@ func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// sortOrder 未传时自动递增
+	if req.SortOrder == nil {
+		unit.SortOrder = model.NextSortOrder(database.DB, &model.TaxonomyUnit{})
+	}
 	// 校验分类单元重复
 	if err := model.CheckTaxonomyUnitDuplicate(database.DB, unit, 0); err != nil {
 		response.BadRequest(c, err.Error())

@@ -43,8 +43,11 @@ func Setup(cfg *config.Config) *gin.Engine {
 		// 教材分类单元: 更新
 		protectedAdmin.PUT("/taxonomy-units/:id", h.UpdateTaxonomyUnit)
 
+		// 标签: 查询
 		protectedAdmin.GET("/tags", h.ListTags)
+		// 标签: 创建
 		protectedAdmin.POST("/tags", h.CreateTag)
+		// 标签: 更新
 		protectedAdmin.PUT("/tags/:id", h.UpdateTag)
 
 		protectedAdmin.GET("/articles", h.ListArticles)
