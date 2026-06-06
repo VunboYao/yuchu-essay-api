@@ -25,13 +25,9 @@ type CreateTaxonomyUnitRequest = TaxonomyUnitWriteRequest
 // 更新分类单元请求。
 type UpdateTaxonomyUnitRequest = TaxonomyUnitWriteRequest
 
-// normalize 校验并补全入参字段。
+// normalize 校验入参字段；textbookVersion 默认值由 ValidateForCreate/ValidateForUpdate 分别处理。
 func (r TaxonomyUnitWriteRequest) normalize() (TaxonomyUnit, error) {
-	// 版本号字段校验
 	version := strings.TrimSpace(r.TextbookVersion)
-	if version == "" {
-		version = DefaultTextbookVersion
-	}
 	// 学期须为上册/下册之一
 	semester := strings.TrimSpace(r.Semester)
 	if semester == "" {
@@ -74,6 +70,10 @@ func (r TaxonomyUnitWriteRequest) ValidateForCreate() (TaxonomyUnit, error) {
 		return TaxonomyUnit{}, err
 	}
 	unit.Status = status
+	// 创建时未传 textbookVersion，默认统编版
+	if unit.TextbookVersion == "" {
+		unit.TextbookVersion = DefaultTextbookVersion
+	}
 	return unit, nil
 }
 
@@ -88,6 +88,13 @@ func (r TaxonomyUnitWriteRequest) ValidateForUpdate(existing TaxonomyUnit) (Taxo
 		return TaxonomyUnit{}, err
 	}
 	unit.Status = status
+	// 更新时未传 textbookVersion，保留原值
+	if unit.TextbookVersion == "" {
+		unit.TextbookVersion = strings.TrimSpace(existing.TextbookVersion)
+		if unit.TextbookVersion == "" {
+			unit.TextbookVersion = DefaultTextbookVersion
+		}
+	}
 	// sortOrder 未传时保留原值
 	if r.SortOrder == nil {
 		unit.SortOrder = existing.SortOrder
