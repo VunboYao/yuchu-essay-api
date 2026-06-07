@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"course_server/internal/database"
+	admindto "course_server/internal/dto/admin"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
@@ -37,7 +38,7 @@ func (s *Server) ListDownloadFiles(c *gin.Context) {
 }
 
 func (s *Server) CreateDownloadFile(c *gin.Context) {
-	var req model.CreateDownloadFileRequest
+	var req admindto.CreateDownloadFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -61,7 +62,7 @@ func (s *Server) UpdateDownloadFile(c *gin.Context) {
 		response.NotFound(c, "download file not found")
 		return
 	}
-	var req model.UpdateDownloadFileRequest
+	var req admindto.UpdateDownloadFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return

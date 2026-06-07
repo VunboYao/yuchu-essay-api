@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"course_server/internal/database"
+	admindto "course_server/internal/dto/admin"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
@@ -24,7 +25,7 @@ func (s *Server) ListHomeBlocks(c *gin.Context) {
 }
 
 func (s *Server) UpsertHomeBlock(c *gin.Context) {
-	var req model.UpsertHomeBlockRequest
+	var req admindto.UpsertHomeBlockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -68,7 +69,7 @@ func (s *Server) ListAdSlots(c *gin.Context) {
 }
 
 func (s *Server) UpsertAdSlot(c *gin.Context) {
-	var req model.UpsertAdSlotRequest
+	var req admindto.UpsertAdSlotRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -112,7 +113,7 @@ func (s *Server) ListOfficialAccountConfigs(c *gin.Context) {
 }
 
 func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
-	var req model.UpsertOfficialAccountConfigRequest
+	var req admindto.UpsertOfficialAccountConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return

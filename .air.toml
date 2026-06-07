@@ -1,0 +1,37 @@
+# Air 热重载配置（开发期在 course_server 目录执行 `air`）
+#:schema https://json.schemastore.org/any.json
+
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main ."
+  delay = 1000
+  entrypoint = ["./tmp/main"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "test"]
+  exclude_regex = ["_test\\.go"]
+  # 仅内容变更时重建，忽略 macOS 上频繁的 ATTRIB/metadata 事件
+  exclude_unchanged = true
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  kill_delay = "500ms"
+  log = "build-errors.log"
+  send_interrupt = true
+
+[color]
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  main_only = false
+  time = true
+
+[misc]
+  clean_on_exit = false
+
+[screen]
+  clear_on_rebuild = false
+  keep_scroll = true

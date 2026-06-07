@@ -1,11 +1,12 @@
-// Package model 定义一期 GORM 模型与业务常量，按使用端分文件：
+// Package model 定义一期 GORM 实体、业务常量与持久化辅助，按使用端分文件：
 //
 //	model_shared.go      — 【共用】内容/配置，后台维护、小程序读取
 //	model_admin.go       — 【后台】管理员与审计
 //	model_miniprogram.go — 【小程序】用户与行为日志
 //	model_order.go       — 【二期】订单/支付（占位，一期勿实现）
+//	model_write.go       — UpdateMap、唯一性检查、按业务键查询
 //
-// 字段 gorm:"comment:..." 同步列注释；表级 COMMENT 见 db_comments.go。
+// HTTP 入参 DTO 见 internal/dto/admin/；字段 gorm:"comment:..." 同步列注释；表级 COMMENT 见 db_comments.go。
 package model
 
 // 通用与内容状态、下载权限常量（禁止在 handler 中散落魔法值）。

@@ -1,9 +1,12 @@
 // 下载资料 Admin 写操作 Request DTO 与校验（见 AGENTS.md §6）。
-package model
+package admin
 
 import (
 	"fmt"
 	"strings"
+
+	"course_server/internal/dto"
+	"course_server/internal/model"
 )
 
 // DownloadFileWriteRequest 下载资料创建/更新共用入参；不含 id、时间戳与 downloadCount。
@@ -29,37 +32,37 @@ type UpdateDownloadFileRequest = DownloadFileWriteRequest
 
 func validAccessType(accessType string) bool {
 	switch accessType {
-	case AccessTypeFree, AccessTypePurchaseRequired, AccessTypeMemberOnly, AccessTypeInternal:
+	case model.AccessTypeFree, model.AccessTypePurchaseRequired, model.AccessTypeMemberOnly, model.AccessTypeInternal:
 		return true
 	default:
 		return false
 	}
 }
 
-func (r DownloadFileWriteRequest) normalize() (DownloadFile, error) {
+func (r DownloadFileWriteRequest) normalize() (model.DownloadFile, error) {
 	ownerType := strings.TrimSpace(r.OwnerType)
 	if ownerType == "" {
-		return DownloadFile{}, fmt.Errorf("ownerType is required")
+		return model.DownloadFile{}, fmt.Errorf("ownerType is required")
 	}
 	if r.OwnerID == 0 {
-		return DownloadFile{}, fmt.Errorf("ownerId is required")
+		return model.DownloadFile{}, fmt.Errorf("ownerId is required")
 	}
 	fileName := strings.TrimSpace(r.FileName)
 	if fileName == "" {
-		return DownloadFile{}, fmt.Errorf("fileName is required")
+		return model.DownloadFile{}, fmt.Errorf("fileName is required")
 	}
 	accessType := strings.TrimSpace(r.AccessType)
 	if accessType == "" {
-		return DownloadFile{}, fmt.Errorf("accessType is required")
+		return model.DownloadFile{}, fmt.Errorf("accessType is required")
 	}
 	if !validAccessType(accessType) {
-		return DownloadFile{}, fmt.Errorf("invalid accessType")
+		return model.DownloadFile{}, fmt.Errorf("invalid accessType")
 	}
 	fileURL := strings.TrimSpace(r.FileURL)
 	if fileURL == "" {
-		return DownloadFile{}, fmt.Errorf("fileUrl is required")
+		return model.DownloadFile{}, fmt.Errorf("fileUrl is required")
 	}
-	return DownloadFile{
+	return model.DownloadFile{
 		OwnerType:  ownerType,
 		OwnerID:    r.OwnerID,
 		FileName:   fileName,
@@ -74,46 +77,29 @@ func (r DownloadFileWriteRequest) normalize() (DownloadFile, error) {
 }
 
 // ValidateForCreate 校验创建入参；status 未传时默认启用。
-func (r DownloadFileWriteRequest) ValidateForCreate() (DownloadFile, error) {
+func (r DownloadFileWriteRequest) ValidateForCreate() (model.DownloadFile, error) {
 	file, err := r.normalize()
 	if err != nil {
-		return DownloadFile{}, err
+		return model.DownloadFile{}, err
 	}
-	status, err := ResolveStatus(r.Status, StatusEnabled)
+	status, err := dto.ResolveStatus(r.Status, model.StatusEnabled)
 	if err != nil {
-		return DownloadFile{}, err
+		return model.DownloadFile{}, err
 	}
 	file.Status = status
 	return file, nil
 }
 
 // ValidateForUpdate 校验更新入参；status 未传时保留 existing 原值。
-func (r DownloadFileWriteRequest) ValidateForUpdate(existing DownloadFile) (DownloadFile, error) {
+func (r DownloadFileWriteRequest) ValidateForUpdate(existing model.DownloadFile) (model.DownloadFile, error) {
 	file, err := r.normalize()
 	if err != nil {
-		return DownloadFile{}, err
+		return model.DownloadFile{}, err
 	}
-	status, err := ResolveStatus(r.Status, existing.Status)
+	status, err := dto.ResolveStatus(r.Status, existing.Status)
 	if err != nil {
-		return DownloadFile{}, err
+		return model.DownloadFile{}, err
 	}
 	file.Status = status
 	return file, nil
-}
-
-// UpdateMap 返回 GORM Updates 用的字段 map（支持零值写入；不含 downloadCount）。
-func (f DownloadFile) UpdateMap() map[string]interface{} {
-	return map[string]interface{}{
-		"owner_type":  f.OwnerType,
-		"owner_id":    f.OwnerID,
-		"file_name":   f.FileName,
-		"tags":        f.Tags,
-		"access_type": f.AccessType,
-		"file_type":   f.FileType,
-		"file_url":    f.FileURL,
-		"file_size":   f.FileSize,
-		"need_login":  f.NeedLogin,
-		"sort_order":  f.SortOrder,
-		"status":      f.Status,
-	}
 }

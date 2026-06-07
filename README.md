@@ -54,15 +54,18 @@ course_server/
 └── internal/
     ├── config/             # YAML 配置加载
     ├── database/           # MySQL/Redis 连接、AutoMigrate、Seed
-    ├── model/              # GORM 模型（models.go 常量 + model_* 分文件）
+    ├── model/              # GORM 实体、常量与持久化辅助
     │   ├── models.go           # 业务常量
-    │   ├── validate.go         # 通用校验（如 ResolveStatus）
+    │   ├── validate.go         # NextSortOrder 等 DB 辅助
+    │   ├── model_write.go      # UpdateMap、唯一性检查、按业务键查询
     │   ├── model_shared.go     # 【共用】内容/配置
-    │   ├── *_request.go        # Admin 写操作 Request DTO 与 Validate（见下文）
     │   ├── model_admin.go      # 【后台】
     │   ├── model_miniprogram.go  # 【小程序】
     │   ├── model_order.go      # 【二期】订单占位
     │   └── db_comments.go      # 表级 COMMENT
+    ├── dto/                # HTTP 入参/出参 DTO
+    │   ├── validate.go         # ResolveStatus 等入参解析
+    │   └── admin/              # Admin 写操作 Request DTO 与 Validate
     ├── handler/            # HTTP 处理（按领域分文件）
     │   ├── helpers.go          # 分页、鉴权上下文
     │   └── helpers_write.go    # UpdateAndReload 等写操作辅助
@@ -77,6 +80,7 @@ course_server/
 
 - 新 API 路由 → `internal/router/router.go`
 - 新表/字段 → 按使用端写入 `internal/model/` 对应文件（见「数据模型文件结构」），并同步 `internal/database/migrate.go` 与 `db_comments.go`
+- Admin 写操作 Request DTO → `internal/dto/admin/<domain>.go`
 - Handler 方法挂在 `Server` 结构体上（`internal/handler/server.go`）
 - 不在 `main.go` 写业务逻辑
 
@@ -266,7 +270,7 @@ headers: { Authorization: `Bearer ${token}` }
 
 ## Admin 写操作约定
 
-后台 Create / Update / Upsert 曾直接使用 `ShouldBindJSON(&model.Article)` 等方式绑定 GORM 实体，存在三类常见问题。现已统一改为 **Request DTO + model 层校验 + 通用写库辅助**，新接口必须遵循；Agent 约束见 [AGENTS.md §6](./AGENTS.md#6-admin-写操作约定)。
+后台 Create / Update / Upsert 曾直接使用 `ShouldBindJSON(&model.Article)` 等方式绑定 GORM 实体，存在三类常见问题。现已统一改为 **Request DTO（dto/admin）+ 入参校验 + model 持久化辅助 + 通用写库辅助**，新接口必须遵循；Agent 约束见 [AGENTS.md §6](./AGENTS.md#6-admin-写操作约定)。
 
 ### 常见问题
 
@@ -280,18 +284,18 @@ headers: { Authorization: `Bearer ${token}` }
 
 ### 解决方案
 
-**1. Request DTO（`internal/model/*_request.go`）**
+**1. Request DTO（`internal/dto/admin/*.go`）**
 
 - **禁止**绑定 GORM 实体（如 `model.Tag`、`model.Article`）
-- **允许**绑定 Request DTO（如 `model.CreateTagRequest`）——二者同在 `model` 包，但 DTO 不含 `id`、时间戳、冗余计数
-- 已落地文件示例：`tag_request.go`、`taxonomy_unit_request.go`、`article_request.go`、`download_file_request.go`、`essay_example_request.go`、`config_request.go`
+- **允许**绑定 Request DTO（如 `admindto.CreateTagRequest`）——DTO 不含 `id`、时间戳、冗余计数
+- 已落地文件示例：`tag.go`、`taxonomy_unit.go`、`article.go`、`download_file.go`、`essay_example.go`、`config.go`
 
-**2. 校验集中在 model 包**
+**2. 校验集中在 dto/admin 包**
 
 ```go
 tag, err := req.ValidateForCreate()              // 创建
 tag, err := req.ValidateForUpdate(existing)      // 更新
-status, err := model.ResolveStatus(ptr, default) // 可选 status
+status, err := dto.ResolveStatus(ptr, default)   // 可选 status
 ```
 
 **3. 写库辅助（`internal/handler/helpers_write.go`）**
@@ -302,7 +306,7 @@ status, err := model.ResolveStatus(ptr, default) // 可选 status
 **4. handler 模板（薄层）**
 
 ```go
-var req model.CreateTagRequest
+var req admindto.CreateTagRequest
 if err := c.ShouldBindJSON(&req); err != nil { ... }
 tag, err := req.ValidateForCreate()
 if err != nil { response.BadRequest(c, err.Error()); return }
@@ -314,12 +318,12 @@ database.DB.Create(&tag)
 
 | 模块 | Handler | Request 文件 |
 |------|---------|--------------|
-| 标签 | `CreateTag` / `UpdateTag` | `tag_request.go` |
-| 分类单元 | `CreateTaxonomyUnit` / `UpdateTaxonomyUnit` | `taxonomy_unit_request.go` |
-| 作文专题 | `CreateArticle` / `UpdateArticle` | `article_request.go` |
-| 下载资料 | `CreateDownloadFile` / `UpdateDownloadFile` | `download_file_request.go` |
-| 优秀作文 | `CreateEssayExample` / `UpdateEssayExample` | `essay_example_request.go` |
-| 运营配置 | `UpsertHomeBlock` / `UpsertAdSlot` / `UpsertOfficialAccountConfig` | `config_request.go` |
+| 标签 | `CreateTag` / `UpdateTag` | `dto/admin/tag.go` |
+| 分类单元 | `CreateTaxonomyUnit` / `UpdateTaxonomyUnit` | `dto/admin/taxonomy_unit.go` |
+| 作文专题 | `CreateArticle` / `UpdateArticle` | `dto/admin/article.go` |
+| 下载资料 | `CreateDownloadFile` / `UpdateDownloadFile` | `dto/admin/download_file.go` |
+| 优秀作文 | `CreateEssayExample` / `UpdateEssayExample` | `dto/admin/essay_example.go` |
+| 运营配置 | `UpsertHomeBlock` / `UpsertAdSlot` / `UpsertOfficialAccountConfig` | `dto/admin/config.go` |
 
 未迁移：`track.go` 埋点、`auth.go` 登录（服务端构造数据，风险较低）。`UpdateArticleStatus` 等专用接口保持独立 struct。
 

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"course_server/internal/database"
+	admindto "course_server/internal/dto/admin"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
@@ -46,7 +47,7 @@ func (s *Server) ListTaxonomyUnits(c *gin.Context) {
 // CreateTaxonomyUnit 创建教材分类单元
 func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 	// 绑定请求参数
-	var req model.CreateTaxonomyUnitRequest
+	var req admindto.CreateTaxonomyUnitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -85,7 +86,7 @@ func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
 		return
 	}
 	// 绑定请求参数
-	var req model.UpdateTaxonomyUnitRequest
+	var req admindto.UpdateTaxonomyUnitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -136,7 +137,7 @@ func (s *Server) ListTags(c *gin.Context) {
 // 标签: 创建
 func (s *Server) CreateTag(c *gin.Context) {
 	// 绑定请求参数
-	var req model.CreateTagRequest
+	var req admindto.CreateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -171,7 +172,7 @@ func (s *Server) UpdateTag(c *gin.Context) {
 		return
 	}
 	// 绑定请求参数
-	var req model.UpdateTagRequest
+	var req admindto.UpdateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return

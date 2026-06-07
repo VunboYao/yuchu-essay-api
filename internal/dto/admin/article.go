@@ -1,11 +1,11 @@
 // 作文专题 Admin 写操作 Request DTO 与校验（见 AGENTS.md §6）。
-package model
+package admin
 
 import (
 	"fmt"
 	"strings"
 
-	"gorm.io/gorm"
+	"course_server/internal/model"
 )
 
 // ArticleWriteRequest 文章创建/更新共用入参；不含 id、时间戳、计数与 publishedAt。
@@ -39,37 +39,36 @@ func resolveArticleStatus(ptr *int, defaultStatus int) (int, error) {
 	if ptr == nil {
 		return defaultStatus, nil
 	}
-	if *ptr != ArticleStatusDraft && *ptr != ArticleStatusPublished {
+	if *ptr != model.ArticleStatusDraft && *ptr != model.ArticleStatusPublished {
 		return 0, fmt.Errorf("invalid status")
 	}
 	return *ptr, nil
 }
 
-func (r ArticleWriteRequest) normalize() (Article, error) {
+func (r ArticleWriteRequest) normalize() (model.Article, error) {
 	title := strings.TrimSpace(r.Title)
 	if title == "" {
-		return Article{}, fmt.Errorf("title is required")
+		return model.Article{}, fmt.Errorf("title is required")
 	}
-	if err := ValidateBodyImages(r.BodyImages); err != nil {
-		return Article{}, err
+	if err := model.ValidateBodyImages(r.BodyImages); err != nil {
+		return model.Article{}, err
 	}
 	version := strings.TrimSpace(r.TextbookVersion)
 	if version == "" {
-		version = DefaultTextbookVersion
+		version = model.DefaultTextbookVersion
 	}
 	semester := strings.TrimSpace(r.Semester)
-	if semester != "" && !ValidSemester(semester) {
-		return Article{}, fmt.Errorf("invalid semester")
+	if semester != "" && !model.ValidSemester(semester) {
+		return model.Article{}, fmt.Errorf("invalid semester")
 	}
-	// 查看权限：未传默认 free（一期文章全部免费查看）；非法值拒绝。member_only/purchase_required 为二期预留。
 	viewAccess := strings.TrimSpace(r.ViewAccessType)
 	if viewAccess == "" {
-		viewAccess = ViewAccessFree
+		viewAccess = model.ViewAccessFree
 	}
-	if !ValidViewAccessType(viewAccess) {
-		return Article{}, fmt.Errorf("invalid viewAccessType")
+	if !model.ValidViewAccessType(viewAccess) {
+		return model.Article{}, fmt.Errorf("invalid viewAccessType")
 	}
-	return Article{
+	return model.Article{
 		Title:           title,
 		Slug:            strings.TrimSpace(r.Slug),
 		TextbookVersion: version,
@@ -90,72 +89,29 @@ func (r ArticleWriteRequest) normalize() (Article, error) {
 }
 
 // ValidateForCreate 校验创建入参；status 未传时默认草稿。
-func (r ArticleWriteRequest) ValidateForCreate() (Article, error) {
+func (r ArticleWriteRequest) ValidateForCreate() (model.Article, error) {
 	article, err := r.normalize()
 	if err != nil {
-		return Article{}, err
+		return model.Article{}, err
 	}
-	status, err := resolveArticleStatus(r.Status, ArticleStatusDraft)
+	status, err := resolveArticleStatus(r.Status, model.ArticleStatusDraft)
 	if err != nil {
-		return Article{}, err
+		return model.Article{}, err
 	}
 	article.Status = status
 	return article, nil
 }
 
 // ValidateForUpdate 校验更新入参；status 未传时保留 existing 原值。
-func (r ArticleWriteRequest) ValidateForUpdate(existing Article) (Article, error) {
+func (r ArticleWriteRequest) ValidateForUpdate(existing model.Article) (model.Article, error) {
 	article, err := r.normalize()
 	if err != nil {
-		return Article{}, err
+		return model.Article{}, err
 	}
 	status, err := resolveArticleStatus(r.Status, existing.Status)
 	if err != nil {
-		return Article{}, err
+		return model.Article{}, err
 	}
 	article.Status = status
 	return article, nil
-}
-
-// UpdateMap 返回 GORM Updates 用的字段 map（支持零值写入；不含 publishedAt 与计数）。
-func (a Article) UpdateMap() map[string]interface{} {
-	return map[string]interface{}{
-		"title":            a.Title,
-		"slug":             a.Slug,
-		"textbook_version": a.TextbookVersion,
-		"grade":            a.Grade,
-		"semester":         a.Semester,
-		"unit":             a.Unit,
-		"essay_topic":      a.EssayTopic,
-		"content_type":     a.ContentType,
-		"audience":         a.Audience,
-		"summary":          a.Summary,
-		"cover_img":        a.CoverImg,
-		"body_images":      a.BodyImages,
-		"view_access_type": a.ViewAccessType,
-		"status":           a.Status,
-		"is_recommended":   a.IsRecommended,
-		"is_hot":           a.IsHot,
-		"sort_order":       a.SortOrder,
-	}
-}
-
-// CheckArticleSlugDuplicate 检查 slug 是否与其他文章冲突（slug 为空时跳过）。
-func CheckArticleSlugDuplicate(db *gorm.DB, slug string, excludeID uint) error {
-	slug = strings.TrimSpace(slug)
-	if slug == "" {
-		return nil
-	}
-	q := db.Model(&Article{}).Where("slug = ?", slug)
-	if excludeID > 0 {
-		q = q.Where("id != ?", excludeID)
-	}
-	var count int64
-	if err := q.Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf("article slug already exists")
-	}
-	return nil
 }
