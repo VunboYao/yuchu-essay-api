@@ -15,12 +15,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// ListArticles 列表
 func (s *Server) ListArticles(c *gin.Context) {
+	// 分页参数
 	page, pageSize := pageParams(c)
+	// 筛选参数
 	db := articleFilters(database.DB.Model(&model.Article{}), c)
 	var total int64
+	// 总条数
 	db.Count(&total)
 	var list []model.Article
+	// 排除 body_images, 按照 sort_order DESC, id DESC 排序
 	if err := paginate(db.Omit("body_images").Order("sort_order DESC, id DESC"), page, pageSize).Find(&list).Error; err != nil {
 		response.ServerError(c, "failed to list articles")
 		return
@@ -28,21 +33,26 @@ func (s *Server) ListArticles(c *gin.Context) {
 	response.Page(c, list, total, page, pageSize)
 }
 
+// CreateArticle 创建
 func (s *Server) CreateArticle(c *gin.Context) {
+	// 绑定请求体
 	var req admindto.CreateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验入参
 	article, err := req.ValidateForCreate()
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 检查 slug 是否重复
 	if err := model.CheckArticleSlugDuplicate(database.DB, article.Slug, 0); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 创建文章
 	if err := database.DB.Create(&article).Error; err != nil {
 		response.ServerError(c, "failed to create article")
 		return
@@ -60,27 +70,34 @@ func (s *Server) GetArticle(c *gin.Context) {
 	response.Success(c, item)
 }
 
+// UpdateArticle 更新
 func (s *Server) UpdateArticle(c *gin.Context) {
+	// 绑定请求体
 	id, _ := strconv.Atoi(c.Param("id"))
+	// 查询文章
 	var item model.Article
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "article not found")
 		return
 	}
+	// 绑定请求体
 	var req admindto.UpdateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验入参
 	article, err := req.ValidateForUpdate(item)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 检查 slug 是否重复
 	if err := model.CheckArticleSlugDuplicate(database.DB, article.Slug, item.ID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 更新文章
 	if err := UpdateAndReload(database.DB, &item, article.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update article")
 		return
@@ -124,21 +141,27 @@ func (s *Server) UpdateArticleStatus(c *gin.Context) {
 
 // articleFilters 后台/公开列表共用的年级、册次、单元、类型、状态、关键词筛选。
 func articleFilters(db *gorm.DB, c *gin.Context) *gorm.DB {
+	// 年级筛选
 	if grade := c.Query("grade"); grade != "" {
 		db = db.Where("grade = ?", grade)
 	}
+	// 学期筛选
 	if semester := c.Query("semester"); semester != "" {
 		db = db.Where("semester = ?", semester)
 	}
+	// 单元筛选
 	if unit := c.Query("unit"); unit != "" {
 		db = db.Where("unit = ?", unit)
 	}
+	// 类型筛选
 	if contentType := c.Query("contentType"); contentType != "" {
 		db = db.Where("content_type = ?", contentType)
 	}
+	// 状态筛选
 	if status := c.Query("status"); status != "" {
 		db = db.Where("status = ?", status)
 	}
+	// 关键词筛选
 	if keyword := c.Query("keyword"); keyword != "" {
 		db = db.Where("title LIKE ? OR essay_topic LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	}
