@@ -31,6 +31,13 @@ go mod tidy
 go run .
 ```
 
+开发期热重载（需先安装 [air](https://github.com/air-verse/air)）：
+
+```bash
+go install github.com/air-verse/air@latest
+air   # 在 course_server 目录执行，配置见 .air.toml
+```
+
 默认后台管理员：
 
 ```text
