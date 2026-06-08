@@ -36,6 +36,24 @@ func (s *Server) ListEssayExamples(c *gin.Context) {
 	response.Page(c, list, total, page, pageSize)
 }
 
+// GetEssayExample 获取优秀作文详情（含关联标签）。
+func (s *Server) GetEssayExample(c *gin.Context) {
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	var item model.EssayExample
+	if err := database.DB.First(&item, id).Error; err != nil {
+		response.NotFound(c, "essay example not found")
+		return
+	}
+	response.Success(c, gin.H{
+		"essay": item,
+		"tags":  s.essayTags(item.ID),
+	})
+}
+
 func (s *Server) CreateEssayExample(c *gin.Context) {
 	var req admindto.CreateEssayExampleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

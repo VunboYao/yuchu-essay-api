@@ -82,7 +82,10 @@ func (s *Server) GetArticle(c *gin.Context) {
 		response.NotFound(c, "article not found")
 		return
 	}
-	response.Success(c, item)
+	response.Success(c, gin.H{
+		"article": item,
+		"tags":    s.articleTags(item.ID),
+	})
 }
 
 // UpdateArticle 更新

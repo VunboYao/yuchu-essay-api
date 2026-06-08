@@ -1,19 +1,13 @@
-// Day5/Day6：后台内容标签关联（article_tags / essay_example_tags）。
-// 提供「整体设置」与「查询」两类接口，设置采用先清后插的全量替换语义。
+// 后台内容标签关联内部 helper（article_tags / essay_example_tags）。
+// 标签读写已并入文章/优秀作文 CRUD 的 tagIds 字段，采用先清后插的全量替换语义。
 package handler
 
 import (
 	"course_server/internal/database"
 	"course_server/internal/model"
-	"course_server/internal/pkg/response"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
-
-type setTagsRequest struct {
-	TagIDs []uint `json:"tagIds"`
-}
 
 // dedupeTagIDs 去重 tag id，保持首次出现顺序。
 func dedupeTagIDs(ids []uint) []uint {
@@ -74,47 +68,6 @@ func replaceEssayTags(tx *gorm.DB, essayID uint, tagIDs []uint) error {
 	return tx.Create(&rows).Error
 }
 
-// SetArticleTags 全量设置文章标签：事务内删除旧关联后插入去重后的新关联。
-func (s *Server) SetArticleTags(c *gin.Context) {
-	articleID, err := pathID(c)
-	if err != nil {
-		response.BadRequest(c, "invalid id")
-		return
-	}
-	var article model.Article
-	if err := database.DB.First(&article, articleID).Error; err != nil {
-		response.NotFound(c, "article not found")
-		return
-	}
-	var req setTagsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	if err := database.DB.Transaction(func(tx *gorm.DB) error {
-		return replaceArticleTags(tx, article.ID, req.TagIDs)
-	}); err != nil {
-		response.ServerError(c, "failed to set article tags")
-		return
-	}
-	response.Success(c, s.articleTags(article.ID))
-}
-
-// ListArticleTags 返回文章当前关联的标签详情列表。
-func (s *Server) ListArticleTags(c *gin.Context) {
-	articleID, err := pathID(c)
-	if err != nil {
-		response.BadRequest(c, "invalid id")
-		return
-	}
-	var article model.Article
-	if err := database.DB.First(&article, articleID).Error; err != nil {
-		response.NotFound(c, "article not found")
-		return
-	}
-	response.Success(c, s.articleTags(article.ID))
-}
-
 // articleTags 关联表 join tags，按排序返回标签实体。
 func (s *Server) articleTags(articleID uint) []model.Tag {
 	var tags []model.Tag
@@ -123,47 +76,6 @@ func (s *Server) articleTags(articleID uint) []model.Tag {
 		Order("tags.sort_order DESC, tags.id DESC").
 		Find(&tags)
 	return tags
-}
-
-// SetEssayTags 全量设置优秀作文标签，语义同 SetArticleTags。
-func (s *Server) SetEssayTags(c *gin.Context) {
-	essayID, err := pathID(c)
-	if err != nil {
-		response.BadRequest(c, "invalid id")
-		return
-	}
-	var essay model.EssayExample
-	if err := database.DB.First(&essay, essayID).Error; err != nil {
-		response.NotFound(c, "essay example not found")
-		return
-	}
-	var req setTagsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	if err := database.DB.Transaction(func(tx *gorm.DB) error {
-		return replaceEssayTags(tx, essay.ID, req.TagIDs)
-	}); err != nil {
-		response.ServerError(c, "failed to set essay tags")
-		return
-	}
-	response.Success(c, s.essayTags(essay.ID))
-}
-
-// ListEssayTags 返回优秀作文当前关联的标签详情列表。
-func (s *Server) ListEssayTags(c *gin.Context) {
-	essayID, err := pathID(c)
-	if err != nil {
-		response.BadRequest(c, "invalid id")
-		return
-	}
-	var essay model.EssayExample
-	if err := database.DB.First(&essay, essayID).Error; err != nil {
-		response.NotFound(c, "essay example not found")
-		return
-	}
-	response.Success(c, s.essayTags(essay.ID))
 }
 
 // essayTags 关联表 join tags，按排序返回标签实体。

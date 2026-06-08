@@ -80,7 +80,7 @@ func ValidateBodyImages(images []string) error {
 	return nil
 }
 
-// ArticleTag 文章-标签关联；关联 CRUD API 待实现。
+// ArticleTag 文章-标签关联；通过文章 CRUD 的 tagIds 字段维护。
 type ArticleTag struct {
 	ID        uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
 	ArticleID uint          `gorm:"uniqueIndex:idx_article_tag;not null;comment:文章ID" json:"articleId"`
