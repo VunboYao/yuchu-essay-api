@@ -119,7 +119,23 @@ func (s *Server) PublicEssayDetail(c *gin.Context) {
 		return
 	}
 	database.DB.Model(&item).UpdateColumn("view_count", gorm.Expr("view_count + ?", 1))
-	response.Success(c, item)
+	resp := gin.H{"essay": item, "article": nil}
+	if item.ArticleID != nil && *item.ArticleID > 0 {
+		var article model.Article
+		if err := database.DB.Select("id", "title", "grade", "semester", "unit", "essay_topic").
+			Where("status = ?", model.ArticleStatusPublished).
+			First(&article, *item.ArticleID).Error; err == nil {
+			resp["article"] = gin.H{
+				"id":         article.ID,
+				"title":      article.Title,
+				"grade":      article.Grade,
+				"semester":   article.Semester,
+				"unit":       article.Unit,
+				"essayTopic": article.EssayTopic,
+			}
+		}
+	}
+	response.Success(c, resp)
 }
 
 // Search 在已发布文章中检索，并写入 search_logs（供后台热门搜索统计）。

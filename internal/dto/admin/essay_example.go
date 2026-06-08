@@ -11,12 +11,12 @@ import (
 
 // EssayExampleWriteRequest 优秀作文创建/更新共用入参；不含 id、时间戳与计数。
 type EssayExampleWriteRequest struct {
-	ArticleID uint   `json:"articleId"`
+	ArticleID *uint  `json:"articleId"`
 	Title     string `json:"title" binding:"required"`
-	Grade     int    `json:"grade"`
+	Grade     int    `json:"grade" binding:"required"`
 	WordCount int    `json:"wordCount"`
-	Body      string `json:"body"`
-	Comment   string `json:"comment"`
+	Body      string `json:"body" binding:"required"`
+	Comment   string `json:"comment" binding:"required"`
 	SortOrder int    `json:"sortOrder"`
 	Status    *int   `json:"status"`
 	TagIDs    []uint `json:"tagIds"`
@@ -28,18 +28,37 @@ type CreateEssayExampleRequest = EssayExampleWriteRequest
 // UpdateEssayExampleRequest 更新优秀作文请求。
 type UpdateEssayExampleRequest = EssayExampleWriteRequest
 
+// resolveOptionalArticleID 解析可选专题关联：未传、null、0 均视为不关联。
+func resolveOptionalArticleID(ptr *uint) *uint {
+	if ptr == nil || *ptr == 0 {
+		return nil
+	}
+	return ptr
+}
+
 func (r EssayExampleWriteRequest) normalize() (model.EssayExample, error) {
 	title := strings.TrimSpace(r.Title)
 	if title == "" {
 		return model.EssayExample{}, fmt.Errorf("title is required")
 	}
+	if r.Grade <= 0 {
+		return model.EssayExample{}, fmt.Errorf("grade must be greater than 0")
+	}
+	body := strings.TrimSpace(r.Body)
+	if body == "" {
+		return model.EssayExample{}, fmt.Errorf("body is required")
+	}
+	comment := strings.TrimSpace(r.Comment)
+	if comment == "" {
+		return model.EssayExample{}, fmt.Errorf("comment is required")
+	}
 	return model.EssayExample{
-		ArticleID: r.ArticleID,
+		ArticleID: resolveOptionalArticleID(r.ArticleID),
 		Title:     title,
 		Grade:     r.Grade,
 		WordCount: r.WordCount,
-		Body:      r.Body,
-		Comment:   strings.TrimSpace(r.Comment),
+		Body:      body,
+		Comment:   comment,
 		SortOrder: r.SortOrder,
 	}, nil
 }

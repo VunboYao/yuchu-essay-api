@@ -93,7 +93,7 @@ type ArticleTag struct {
 // EssayExample 优秀范文。
 type EssayExample struct {
 	ID            uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
-	ArticleID     uint          `gorm:"index;comment:所属专题文章ID" json:"articleId"`
+	ArticleID     *uint         `gorm:"index;comment:所属专题文章ID(可选)" json:"articleId"`
 	Title         string        `gorm:"size:255;index;not null;comment:范文标题" json:"title"`
 	Grade         int           `gorm:"index;comment:适用年级" json:"grade"`
 	WordCount     int           `gorm:"comment:字数" json:"wordCount"`

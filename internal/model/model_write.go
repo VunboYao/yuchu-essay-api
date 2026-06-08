@@ -137,13 +137,13 @@ func (e EssayExample) UpdateMap() map[string]interface{} {
 	}
 }
 
-// CheckEssayArticleExists 校验关联文章是否存在（articleId 为 0 时跳过）。
-func CheckEssayArticleExists(db *gorm.DB, articleID uint) error {
-	if articleID == 0 {
+// CheckEssayArticleExists 校验关联专题文章是否存在；未关联（nil/0）时直接通过。
+func CheckEssayArticleExists(db *gorm.DB, articleID *uint) error {
+	if articleID == nil || *articleID == 0 {
 		return nil
 	}
 	var count int64
-	if err := db.Model(&Article{}).Where("id = ?", articleID).Count(&count).Error; err != nil {
+	if err := db.Model(&Article{}).Where("id = ?", *articleID).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {

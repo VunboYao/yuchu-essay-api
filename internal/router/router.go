@@ -61,10 +61,15 @@ func Setup(cfg *config.Config) *gin.Engine {
 		// 文章: 更新状态
 		protectedAdmin.PUT("/articles/:id/status", h.UpdateArticleStatus)
 
+		// 优秀作文: 列表查询
 		protectedAdmin.GET("/essay-examples", h.ListEssayExamples)
+		// 优秀作文: 创建
 		protectedAdmin.POST("/essay-examples", h.CreateEssayExample)
+		// 优秀作文: 详情查询
 		protectedAdmin.GET("/essay-examples/:id", h.GetEssayExample)
+		// 优秀作文: 更新
 		protectedAdmin.PUT("/essay-examples/:id", h.UpdateEssayExample)
+		// 优秀作文: 删除
 		protectedAdmin.DELETE("/essay-examples/:id", h.DeleteEssayExample)
 
 		protectedAdmin.GET("/download-files", h.ListDownloadFiles)

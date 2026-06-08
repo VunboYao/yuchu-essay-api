@@ -78,7 +78,7 @@ func (s *Server) GetArticle(c *gin.Context) {
 		return
 	}
 	var item model.Article
-	if err := database.DB.Preload("Essays", "status = ?", model.StatusEnabled).First(&item, id).Error; err != nil {
+	if err := database.DB.Preload("Essays").First(&item, id).Error; err != nil {
 		response.NotFound(c, "article not found")
 		return
 	}

@@ -1,4 +1,4 @@
-// Day6：后台优秀作文（essay_examples）CRUD；通过 article_id 关联专题，标签关联见 admin_tag_relation.go。
+// Day6：后台优秀作文（essay_examples）CRUD；article_id 可选关联专题，标签关联见 admin_tag_relation.go。
 package handler
 
 import (
@@ -11,9 +11,12 @@ import (
 	"gorm.io/gorm"
 )
 
+// ListEssayExamples 列表查询
 func (s *Server) ListEssayExamples(c *gin.Context) {
+	// 分页参数
 	page, pageSize := pageParams(c)
 	db := database.DB.Model(&model.EssayExample{})
+	// 筛选参数
 	if grade := c.Query("grade"); grade != "" {
 		db = db.Where("grade = ?", grade)
 	}
@@ -54,17 +57,20 @@ func (s *Server) GetEssayExample(c *gin.Context) {
 	})
 }
 
+// CreateEssayExample 创建优秀作文。
 func (s *Server) CreateEssayExample(c *gin.Context) {
 	var req admindto.CreateEssayExampleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验入参
 	essay, err := req.ValidateForCreate()
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 检查专题是否存在
 	if err := model.CheckEssayArticleExists(database.DB, essay.ArticleID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
