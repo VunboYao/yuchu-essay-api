@@ -3,7 +3,6 @@ package handler
 
 import (
 	"errors"
-	"strconv"
 	"strings"
 
 	"course_server/internal/database"
@@ -158,7 +157,11 @@ func (s *Server) UploadSTS(c *gin.Context) {
 // DeleteByID 通用删除 stub，未在 router 注册，勿调用。
 func (s *Server) DeleteByID(modelName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id, _ := strconv.Atoi(c.Param("id"))
+		id, err := pathID(c)
+		if err != nil {
+			response.BadRequest(c, "invalid id")
+			return
+		}
 		response.Success(c, gin.H{"model": modelName, "id": id})
 	}
 }

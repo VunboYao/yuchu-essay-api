@@ -2,8 +2,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
 	"course_server/internal/model"
@@ -77,9 +75,11 @@ func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 
 // UpdateTaxonomyUnit 更新教材分类单元
 func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
-	// 获取请求参数
-	id, _ := strconv.Atoi(c.Param("id"))
-	// 查询分类单元
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.TaxonomyUnit
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "taxonomy unit not found")
@@ -163,9 +163,11 @@ func (s *Server) CreateTag(c *gin.Context) {
 
 // 标签: 更新
 func (s *Server) UpdateTag(c *gin.Context) {
-	// 获取请求参数
-	id, _ := strconv.Atoi(c.Param("id"))
-	// 查询标签
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.Tag
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "tag not found")

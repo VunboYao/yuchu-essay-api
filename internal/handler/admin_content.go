@@ -3,7 +3,6 @@
 package handler
 
 import (
-	"strconv"
 	"time"
 
 	"course_server/internal/database"
@@ -61,7 +60,11 @@ func (s *Server) CreateArticle(c *gin.Context) {
 }
 
 func (s *Server) GetArticle(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.Article
 	if err := database.DB.Preload("Essays", "status = ?", model.StatusEnabled).First(&item, id).Error; err != nil {
 		response.NotFound(c, "article not found")
@@ -72,15 +75,17 @@ func (s *Server) GetArticle(c *gin.Context) {
 
 // UpdateArticle 更新
 func (s *Server) UpdateArticle(c *gin.Context) {
-	// 绑定请求体
-	id, _ := strconv.Atoi(c.Param("id"))
-	// 查询文章
+	// 解析请求参数id并检查
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.Article
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "article not found")
 		return
 	}
-	// 绑定请求体
 	var req admindto.UpdateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
@@ -108,7 +113,11 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 // UpdateArticleStatus 上架/下架。
 // 首次上架（published_at 为空）记录当前时间为发布时间，重复上架保留原值；下架则清空 published_at。
 func (s *Server) UpdateArticleStatus(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var req struct {
 		Status int `json:"status"`
 	}

@@ -56,7 +56,11 @@ func (s *Server) CreateDownloadFile(c *gin.Context) {
 }
 
 func (s *Server) UpdateDownloadFile(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.DownloadFile
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "download file not found")
@@ -80,9 +84,18 @@ func (s *Server) UpdateDownloadFile(c *gin.Context) {
 }
 
 func (s *Server) DeleteDownloadFile(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	if err := database.DB.Delete(&model.DownloadFile{}, id).Error; err != nil {
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	result := database.DB.Delete(&model.DownloadFile{}, id)
+	if result.Error != nil {
 		response.ServerError(c, "failed to delete download file")
+		return
+	}
+	if result.RowsAffected == 0 {
+		response.NotFound(c, "download file not found")
 		return
 	}
 	response.Success(c, gin.H{"id": id})
@@ -92,7 +105,11 @@ func (s *Server) DeleteDownloadFile(c *gin.Context) {
 // 须同时满足：status=启用、access_type=free、tags 含「免费」；否则 403。
 // 成功时事务写入 download_logs 并递增 download_count（owner_type=article 时同步文章计数）。
 func (s *Server) SignDownloadURL(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var file model.DownloadFile
 	if err := database.DB.First(&file, id).Error; err != nil {
 		response.NotFound(c, "download file not found")
@@ -104,7 +121,7 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 	}
 
 	userID := currentAuthID(c)
-	err := database.DB.Transaction(func(tx *gorm.DB) error {
+	err = database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&model.DownloadLog{
 			UserID:      userID,
 			FileID:      file.ID,

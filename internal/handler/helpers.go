@@ -8,6 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// pathID 解析路径 :id，须为正整数；非法时返回 error。
+func pathID(c *gin.Context) (int, error) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		return 0, err
+	}
+	return id, nil
+}
+
 // pageParams 解析 page/pageSize，默认 1/20，pageSize 上限 100。
 func pageParams(c *gin.Context) (int, int) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

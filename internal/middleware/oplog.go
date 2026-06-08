@@ -29,7 +29,12 @@ func AdminOperationLog() gin.HandlerFunc {
 		if id == 0 {
 			return
 		}
-		targetID, _ := strconv.Atoi(c.Param("id"))
+		targetID := 0
+		if raw := c.Param("id"); raw != "" {
+			if id, err := strconv.Atoi(raw); err == nil && id > 0 {
+				targetID = id
+			}
+		}
 		database.DB.Create(&model.AdminOperationLog{
 			AdminID:    id,
 			Action:     c.Request.Method + " " + c.FullPath(),

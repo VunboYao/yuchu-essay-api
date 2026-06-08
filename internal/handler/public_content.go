@@ -2,8 +2,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"course_server/internal/database"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
@@ -63,7 +61,11 @@ func (s *Server) PublicArticles(c *gin.Context) {
 
 // PublicArticleDetail 已发布文章详情；递增 view_count，并返回该文章下可免费下载的资料列表。
 func (s *Server) PublicArticleDetail(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.Article
 	if err := database.DB.Preload("Essays", "status = ?", model.StatusEnabled).
 		Where("status = ?", model.ArticleStatusPublished).First(&item, id).Error; err != nil {
@@ -106,7 +108,11 @@ func (s *Server) PublicEssays(c *gin.Context) {
 }
 
 func (s *Server) PublicEssayDetail(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.EssayExample
 	if err := database.DB.Where("status = ?", model.StatusEnabled).First(&item, id).Error; err != nil {
 		response.NotFound(c, "essay not found")

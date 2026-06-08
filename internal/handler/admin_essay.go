@@ -2,8 +2,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
 	"course_server/internal/model"
@@ -60,7 +58,11 @@ func (s *Server) CreateEssayExample(c *gin.Context) {
 }
 
 func (s *Server) UpdateEssayExample(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
 	var item model.EssayExample
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "essay example not found")
@@ -88,9 +90,18 @@ func (s *Server) UpdateEssayExample(c *gin.Context) {
 }
 
 func (s *Server) DeleteEssayExample(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	if err := database.DB.Delete(&model.EssayExample{}, id).Error; err != nil {
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	result := database.DB.Delete(&model.EssayExample{}, id)
+	if result.Error != nil {
 		response.ServerError(c, "failed to delete essay example")
+		return
+	}
+	if result.RowsAffected == 0 {
+		response.NotFound(c, "essay example not found")
 		return
 	}
 	response.Success(c, gin.H{"id": id})
