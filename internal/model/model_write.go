@@ -2,11 +2,18 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"gorm.io/gorm"
 )
+
+// jsonColumnValue 序列化 JSON 列写入值；Updates(map) 不走 struct 的 serializer tag。
+func jsonColumnValue(v any) []byte {
+	b, _ := json.Marshal(v)
+	return b
+}
 
 // --- Tag ---
 
@@ -86,7 +93,7 @@ func (a Article) UpdateMap() map[string]interface{} {
 		"audience":         a.Audience,
 		"summary":          a.Summary,
 		"cover_img":        a.CoverImg,
-		"body_images":      a.BodyImages,
+		"body_images":      jsonColumnValue(a.BodyImages),
 		"view_access_type": a.ViewAccessType,
 		"status":           a.Status,
 		"is_recommended":   a.IsRecommended,

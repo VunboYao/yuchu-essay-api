@@ -59,6 +59,7 @@ func (s *Server) CreateArticle(c *gin.Context) {
 	response.Success(c, article)
 }
 
+// GetArticle 获取文章
 func (s *Server) GetArticle(c *gin.Context) {
 	id, err := pathID(c)
 	if err != nil {
@@ -86,6 +87,7 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 		response.NotFound(c, "article not found")
 		return
 	}
+	// 绑定请求参数
 	var req admindto.UpdateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
@@ -104,7 +106,7 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 	}
 	// 更新文章
 	if err := UpdateAndReload(database.DB, &item, article.UpdateMap()); err != nil {
-		response.ServerError(c, "failed to update article")
+		response.ServerError(c, "failed to update article:"+err.Error())
 		return
 	}
 	response.Success(c, item)

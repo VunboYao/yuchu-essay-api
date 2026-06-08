@@ -50,11 +50,13 @@ func Setup(cfg *config.Config) *gin.Engine {
 		// 标签: 更新
 		protectedAdmin.PUT("/tags/:id", h.UpdateTag)
 
-		// 文章: 查询
+		// 文章: 列表查询
 		protectedAdmin.GET("/articles", h.ListArticles)
 		// 文章: 创建
 		protectedAdmin.POST("/articles", h.CreateArticle)
+		// 文章: 详情查询
 		protectedAdmin.GET("/articles/:id", h.GetArticle)
+		// 文章: 更新
 		protectedAdmin.PUT("/articles/:id", h.UpdateArticle)
 		protectedAdmin.PUT("/articles/:id/status", h.UpdateArticleStatus)
 		protectedAdmin.GET("/articles/:id/tags", h.ListArticleTags)
