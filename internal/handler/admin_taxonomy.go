@@ -115,10 +115,7 @@ func (s *Server) ListTags(c *gin.Context) {
 	// 分页参数
 	page, pageSize := pageParams(c)
 	db := database.DB.Model(&model.Tag{})
-	// 过滤 — type 精确匹配，keyword 模糊搜索
-	if typ := c.Query("type"); typ != "" {
-		db = db.Where("type = ?", typ)
-	}
+	// keyword 模糊搜索标签名
 	if keyword := c.Query("keyword"); keyword != "" {
 		db = db.Where("name LIKE ?", "%"+keyword+"%")
 	}
@@ -148,8 +145,8 @@ func (s *Server) CreateTag(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	// 校验标签重复
-	if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, 0); err != nil {
+	// 校验标签名重复
+	if err := model.CheckTagNameDuplicate(database.DB, tag.Name, 0); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -185,8 +182,8 @@ func (s *Server) UpdateTag(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	// 校验标签重复: 排除当前标签本身
-	if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, item.ID); err != nil {
+	// 校验标签名重复: 排除当前标签本身
+	if err := model.CheckTagNameDuplicate(database.DB, tag.Name, item.ID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

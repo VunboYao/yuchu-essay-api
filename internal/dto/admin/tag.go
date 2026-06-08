@@ -9,10 +9,9 @@ import (
 	"course_server/internal/model"
 )
 
-// TagWriteRequest 标签创建/更新共用入参字段。
+// TagWriteRequest 标签创建/更新共用入参；仅需 name，type 已废弃。
 type TagWriteRequest struct {
 	Name      string `json:"name" binding:"required"`
-	Type      string `json:"type" binding:"required"`
 	SortOrder int    `json:"sortOrder"`
 	Status    *int   `json:"status"`
 }
@@ -23,32 +22,22 @@ type CreateTagRequest = TagWriteRequest
 // UpdateTagRequest 更新标签请求。
 type UpdateTagRequest = TagWriteRequest
 
-const (
-	maxTagNameLen = 80
-	maxTagTypeLen = 40
-)
+const maxTagNameLen = 80
 
-func (r TagWriteRequest) normalize() (name, typ string, err error) {
-	name = strings.TrimSpace(r.Name)
-	typ = strings.TrimSpace(r.Type)
+func (r TagWriteRequest) normalize() (string, error) {
+	name := strings.TrimSpace(r.Name)
 	if name == "" {
-		return "", "", fmt.Errorf("name is required")
-	}
-	if typ == "" {
-		return "", "", fmt.Errorf("type is required")
+		return "", fmt.Errorf("name is required")
 	}
 	if len(name) > maxTagNameLen {
-		return "", "", fmt.Errorf("name exceeds max %d", maxTagNameLen)
+		return "", fmt.Errorf("name exceeds max %d", maxTagNameLen)
 	}
-	if len(typ) > maxTagTypeLen {
-		return "", "", fmt.Errorf("type exceeds max %d", maxTagTypeLen)
-	}
-	return name, typ, nil
+	return name, nil
 }
 
 // ValidateForCreate 校验创建入参；status 未传时默认启用。
 func (r TagWriteRequest) ValidateForCreate() (model.Tag, error) {
-	name, typ, err := r.normalize()
+	name, err := r.normalize()
 	if err != nil {
 		return model.Tag{}, err
 	}
@@ -56,12 +45,12 @@ func (r TagWriteRequest) ValidateForCreate() (model.Tag, error) {
 	if err != nil {
 		return model.Tag{}, err
 	}
-	return model.Tag{Name: name, Type: typ, SortOrder: r.SortOrder, Status: status}, nil
+	return model.Tag{Name: name, SortOrder: r.SortOrder, Status: status}, nil
 }
 
 // ValidateForUpdate 校验更新入参；status 未传时保留 existing 原值。
 func (r TagWriteRequest) ValidateForUpdate(existing model.Tag) (model.Tag, error) {
-	name, typ, err := r.normalize()
+	name, err := r.normalize()
 	if err != nil {
 		return model.Tag{}, err
 	}
@@ -69,5 +58,5 @@ func (r TagWriteRequest) ValidateForUpdate(existing model.Tag) (model.Tag, error
 	if err != nil {
 		return model.Tag{}, err
 	}
-	return model.Tag{Name: name, Type: typ, SortOrder: r.SortOrder, Status: status}, nil
+	return model.Tag{Name: name, SortOrder: r.SortOrder, Status: status}, nil
 }

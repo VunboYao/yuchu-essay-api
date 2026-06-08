@@ -24,11 +24,11 @@ type TaxonomyUnit struct {
 	UpdatedAt       jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
-// Tag 标签字典。
+// Tag 标签字典；name 全局唯一，type 已废弃（保留列兼容旧数据）。
 type Tag struct {
 	ID        uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
-	Name      string        `gorm:"size:80;not null;index:idx_tag_name_type,unique;comment:标签名" json:"name"`
-	Type      string        `gorm:"size:40;not null;index:idx_tag_name_type,unique;comment:标签分组(后台自定义)" json:"type"`
+	Name      string        `gorm:"size:80;not null;uniqueIndex;comment:标签名(唯一)" json:"name"`
+	Type      string        `gorm:"size:40;comment:已废弃，保留列兼容" json:"type,omitempty"`
 	SortOrder int           `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
 	Status    int           `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
 	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`

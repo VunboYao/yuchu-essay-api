@@ -17,19 +17,18 @@ func jsonColumnValue(v any) []byte {
 
 // --- Tag ---
 
-// UpdateMap 返回 GORM Updates 用的字段 map（支持零值写入）。
+// UpdateMap 返回 GORM Updates 用的字段 map（支持零值写入）；type 已废弃不再更新。
 func (t Tag) UpdateMap() map[string]interface{} {
 	return map[string]interface{}{
 		"name":       t.Name,
-		"type":       t.Type,
 		"sort_order": t.SortOrder,
 		"status":     t.Status,
 	}
 }
 
-// CheckTagNameTypeDuplicate 检查 name+type 是否与其他记录冲突。
-func CheckTagNameTypeDuplicate(db *gorm.DB, name, typ string, excludeID uint) error {
-	q := db.Model(&Tag{}).Where("name = ? AND type = ?", name, typ)
+// CheckTagNameDuplicate 检查 name 是否与其他记录冲突。
+func CheckTagNameDuplicate(db *gorm.DB, name string, excludeID uint) error {
+	q := db.Model(&Tag{}).Where("name = ?", name)
 	if excludeID > 0 {
 		q = q.Where("id != ?", excludeID)
 	}
@@ -38,7 +37,7 @@ func CheckTagNameTypeDuplicate(db *gorm.DB, name, typ string, excludeID uint) er
 		return err
 	}
 	if count > 0 {
-		return fmt.Errorf("tag with same name and type already exists")
+		return fmt.Errorf("tag with same name already exists")
 	}
 	return nil
 }

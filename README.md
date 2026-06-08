@@ -317,7 +317,7 @@ var req admindto.CreateTagRequest
 if err := c.ShouldBindJSON(&req); err != nil { ... }
 tag, err := req.ValidateForCreate()
 if err != nil { response.BadRequest(c, err.Error()); return }
-if err := model.CheckTagNameTypeDuplicate(database.DB, tag.Name, tag.Type, 0); err != nil { ... }
+if err := model.CheckTagNameDuplicate(database.DB, tag.Name, 0); err != nil { ... }
 database.DB.Create(&tag)
 ```
 
