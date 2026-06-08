@@ -27,6 +27,7 @@ type ArticleWriteRequest struct {
 	IsRecommended   bool     `json:"isRecommended"`
 	IsHot           bool     `json:"isHot"`
 	SortOrder       int      `json:"sortOrder"`
+	TagIDs          []uint   `json:"tagIds"`
 }
 
 // CreateArticleRequest 创建文章请求。

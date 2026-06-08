@@ -51,12 +51,23 @@ func (s *Server) CreateArticle(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	// 创建文章
-	if err := database.DB.Create(&article).Error; err != nil {
+	// 事务内创建文章并可选写入标签关联
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&article).Error; err != nil {
+			return err
+		}
+		if req.TagIDs != nil {
+			return replaceArticleTags(tx, article.ID, req.TagIDs)
+		}
+		return nil
+	}); err != nil {
 		response.ServerError(c, "failed to create article")
 		return
 	}
-	response.Success(c, article)
+	response.Success(c, gin.H{
+		"article": article,
+		"tags":    s.articleTags(article.ID),
+	})
 }
 
 // GetArticle 获取文章
@@ -104,12 +115,23 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	// 更新文章
-	if err := UpdateAndReload(database.DB, &item, article.UpdateMap()); err != nil {
+	// 事务内更新文章并可选全量替换标签
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := UpdateAndReload(tx, &item, article.UpdateMap()); err != nil {
+			return err
+		}
+		if req.TagIDs != nil {
+			return replaceArticleTags(tx, item.ID, req.TagIDs)
+		}
+		return nil
+	}); err != nil {
 		response.ServerError(c, "failed to update article:"+err.Error())
 		return
 	}
-	response.Success(c, item)
+	response.Success(c, gin.H{
+		"article": item,
+		"tags":    s.articleTags(item.ID),
+	})
 }
 
 // UpdateArticleStatus 上架/下架。

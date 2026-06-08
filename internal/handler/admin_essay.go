@@ -8,6 +8,7 @@ import (
 	"course_server/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func (s *Server) ListEssayExamples(c *gin.Context) {
@@ -50,11 +51,23 @@ func (s *Server) CreateEssayExample(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if err := database.DB.Create(&essay).Error; err != nil {
+	// 事务内创建优秀作文并可选写入标签关联
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&essay).Error; err != nil {
+			return err
+		}
+		if req.TagIDs != nil {
+			return replaceEssayTags(tx, essay.ID, req.TagIDs)
+		}
+		return nil
+	}); err != nil {
 		response.ServerError(c, "failed to create essay example")
 		return
 	}
-	response.Success(c, essay)
+	response.Success(c, gin.H{
+		"essay": essay,
+		"tags":  s.essayTags(essay.ID),
+	})
 }
 
 func (s *Server) UpdateEssayExample(c *gin.Context) {
@@ -82,11 +95,23 @@ func (s *Server) UpdateEssayExample(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if err := UpdateAndReload(database.DB, &item, essay.UpdateMap()); err != nil {
+	// 事务内更新优秀作文并可选全量替换标签
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := UpdateAndReload(tx, &item, essay.UpdateMap()); err != nil {
+			return err
+		}
+		if req.TagIDs != nil {
+			return replaceEssayTags(tx, item.ID, req.TagIDs)
+		}
+		return nil
+	}); err != nil {
 		response.ServerError(c, "failed to update essay example")
 		return
 	}
-	response.Success(c, item)
+	response.Success(c, gin.H{
+		"essay": item,
+		"tags":  s.essayTags(item.ID),
+	})
 }
 
 func (s *Server) DeleteEssayExample(c *gin.Context) {

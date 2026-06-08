@@ -19,6 +19,7 @@ type EssayExampleWriteRequest struct {
 	Comment   string `json:"comment"`
 	SortOrder int    `json:"sortOrder"`
 	Status    *int   `json:"status"`
+	TagIDs    []uint `json:"tagIds"`
 }
 
 // CreateEssayExampleRequest 创建优秀作文请求。

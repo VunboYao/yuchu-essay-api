@@ -15,14 +15,63 @@ type setTagsRequest struct {
 	TagIDs []uint `json:"tagIds"`
 }
 
+// dedupeTagIDs 去重 tag id，保持首次出现顺序。
+func dedupeTagIDs(ids []uint) []uint {
+	if len(ids) == 0 {
+		return ids
+	}
+	seen := map[uint]bool{}
+	out := make([]uint, 0, len(ids))
+	for _, id := range ids {
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	return out
+}
+
 // validTagIDs 过滤出实际存在的标签 ID，避免写入无效关联（本表无外键约束）。
-func validTagIDs(ids []uint) []uint {
+func validTagIDs(db *gorm.DB, ids []uint) []uint {
 	if len(ids) == 0 {
 		return nil
 	}
 	var existing []uint
-	database.DB.Model(&model.Tag{}).Where("id IN ?", ids).Pluck("id", &existing)
+	db.Model(&model.Tag{}).Where("id IN ?", ids).Pluck("id", &existing)
 	return existing
+}
+
+// replaceArticleTags 全量替换文章标签：先删后批量插入。
+func replaceArticleTags(tx *gorm.DB, articleID uint, tagIDs []uint) error {
+	tagIDs = validTagIDs(tx, dedupeTagIDs(tagIDs))
+	if err := tx.Where("article_id = ?", articleID).Delete(&model.ArticleTag{}).Error; err != nil {
+		return err
+	}
+	if len(tagIDs) == 0 {
+		return nil
+	}
+	rows := make([]model.ArticleTag, 0, len(tagIDs))
+	for _, tagID := range tagIDs {
+		rows = append(rows, model.ArticleTag{ArticleID: articleID, TagID: tagID})
+	}
+	return tx.Create(&rows).Error
+}
+
+// replaceEssayTags 全量替换优秀作文标签，语义同 replaceArticleTags。
+func replaceEssayTags(tx *gorm.DB, essayID uint, tagIDs []uint) error {
+	tagIDs = validTagIDs(tx, dedupeTagIDs(tagIDs))
+	if err := tx.Where("essay_id = ?", essayID).Delete(&model.EssayExampleTag{}).Error; err != nil {
+		return err
+	}
+	if len(tagIDs) == 0 {
+		return nil
+	}
+	rows := make([]model.EssayExampleTag, 0, len(tagIDs))
+	for _, tagID := range tagIDs {
+		rows = append(rows, model.EssayExampleTag{EssayID: essayID, TagID: tagID})
+	}
+	return tx.Create(&rows).Error
 }
 
 // SetArticleTags 全量设置文章标签：事务内删除旧关联后插入去重后的新关联。
@@ -42,25 +91,9 @@ func (s *Server) SetArticleTags(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-
-	tagIDs := validTagIDs(req.TagIDs)
-	err = database.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("article_id = ?", article.ID).Delete(&model.ArticleTag{}).Error; err != nil {
-			return err
-		}
-		seen := map[uint]bool{}
-		for _, tagID := range tagIDs {
-			if seen[tagID] {
-				continue
-			}
-			seen[tagID] = true
-			if err := tx.Create(&model.ArticleTag{ArticleID: article.ID, TagID: tagID}).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		return replaceArticleTags(tx, article.ID, req.TagIDs)
+	}); err != nil {
 		response.ServerError(c, "failed to set article tags")
 		return
 	}
@@ -109,25 +142,9 @@ func (s *Server) SetEssayTags(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-
-	tagIDs := validTagIDs(req.TagIDs)
-	err = database.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("essay_id = ?", essay.ID).Delete(&model.EssayExampleTag{}).Error; err != nil {
-			return err
-		}
-		seen := map[uint]bool{}
-		for _, tagID := range tagIDs {
-			if seen[tagID] {
-				continue
-			}
-			seen[tagID] = true
-			if err := tx.Create(&model.EssayExampleTag{EssayID: essay.ID, TagID: tagID}).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		return replaceEssayTags(tx, essay.ID, req.TagIDs)
+	}); err != nil {
 		response.ServerError(c, "failed to set essay tags")
 		return
 	}
