@@ -64,7 +64,9 @@ func (s *Server) CreateDownloadFile(c *gin.Context) {
 	response.Success(c, file)
 }
 
+// UpdateDownloadFile 更新下载文件
 func (s *Server) UpdateDownloadFile(c *gin.Context) {
+	// 1. 获取 ID
 	id, err := pathID(c)
 	if err != nil {
 		response.BadRequest(c, "invalid id")
@@ -85,10 +87,12 @@ func (s *Server) UpdateDownloadFile(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验归属文章是否存在，避免更新孤儿资料
 	if err := model.CheckDownloadOwnerExists(database.DB, file.OwnerType, file.OwnerID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 更新数据库
 	if err := UpdateAndReload(database.DB, &item, file.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update download file")
 		return
@@ -102,13 +106,19 @@ func (s *Server) DeleteDownloadFile(c *gin.Context) {
 		response.BadRequest(c, "invalid id")
 		return
 	}
-	result := database.DB.Delete(&model.DownloadFile{}, id)
-	if result.Error != nil {
-		response.ServerError(c, "failed to delete download file")
+	var item model.DownloadFile
+	if err := database.DB.First(&item, id).Error; err != nil {
+		response.NotFound(c, "download file not found")
 		return
 	}
-	if result.RowsAffected == 0 {
-		response.NotFound(c, "download file not found")
+	// 已有下载记录时拒绝物理删除，避免丢统计；运营下架请用 PUT 改 status 或去掉「免费」标签
+	force := c.Query("confirm") == "true"
+	if err := model.CheckDownloadFileDeletable(database.DB, item, force); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := database.DB.Delete(&item).Error; err != nil {
+		response.ServerError(c, "failed to delete download file")
 		return
 	}
 	response.Success(c, gin.H{"id": id})

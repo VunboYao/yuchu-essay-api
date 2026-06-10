@@ -76,7 +76,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.GET("/download-files", h.ListDownloadFiles)
 		// 下载文件: 创建
 		protectedAdmin.POST("/download-files", h.CreateDownloadFile)
+		// 下载文件: 更新
 		protectedAdmin.PUT("/download-files/:id", h.UpdateDownloadFile)
+		// 文件: 删除
 		protectedAdmin.DELETE("/download-files/:id", h.DeleteDownloadFile)
 
 		protectedAdmin.GET("/home-blocks", h.ListHomeBlocks)

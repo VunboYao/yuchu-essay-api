@@ -154,6 +154,25 @@ func CheckEssayArticleExists(db *gorm.DB, articleID *uint) error {
 
 // --- DownloadFile ---
 
+// CheckDownloadFileDeletable 校验下载资料是否可物理删除。
+// 已有下载记录时默认拒绝删除，建议 PUT 禁用或去掉「免费」标签；传 force 时可强制删除。
+func CheckDownloadFileDeletable(db *gorm.DB, file DownloadFile, force bool) error {
+	if force {
+		return nil
+	}
+	if file.DownloadCount > 0 {
+		return fmt.Errorf("download file has download history, set status to disabled or pass confirm=true")
+	}
+	var logCount int64
+	if err := db.Model(&DownloadLog{}).Where("file_id = ?", file.ID).Count(&logCount).Error; err != nil {
+		return err
+	}
+	if logCount > 0 {
+		return fmt.Errorf("download file has download history, set status to disabled or pass confirm=true")
+	}
+	return nil
+}
+
 // CheckDownloadOwnerExists 校验资料归属资源是否存在；一期仅支持 owner_type=article。
 func CheckDownloadOwnerExists(db *gorm.DB, ownerType string, ownerID uint) error {
 	switch ownerType {
