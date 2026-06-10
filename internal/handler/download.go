@@ -16,7 +16,9 @@ import (
 )
 
 func (s *Server) ListDownloadFiles(c *gin.Context) {
+	// 1. 获取分页参数
 	page, pageSize := pageParams(c)
+	// 2. 构建查询条件
 	db := database.DB.Model(&model.DownloadFile{})
 	if ownerType := c.Query("ownerType"); ownerType != "" {
 		db = db.Where("owner_type = ?", ownerType)
@@ -30,6 +32,7 @@ func (s *Server) ListDownloadFiles(c *gin.Context) {
 	var total int64
 	db.Count(&total)
 	var list []model.DownloadFile
+	// 3. 执行查询
 	if err := paginate(db.Order("sort_order DESC, id DESC"), page, pageSize).Find(&list).Error; err != nil {
 		response.ServerError(c, "failed to list download files")
 		return
@@ -37,6 +40,7 @@ func (s *Server) ListDownloadFiles(c *gin.Context) {
 	response.Page(c, list, total, page, pageSize)
 }
 
+// CreateDownloadFile 创建下载文件
 func (s *Server) CreateDownloadFile(c *gin.Context) {
 	var req admindto.CreateDownloadFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -48,8 +52,13 @@ func (s *Server) CreateDownloadFile(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验归属文章是否存在，避免写入孤儿资料
+	if err := model.CheckDownloadOwnerExists(database.DB, file.OwnerType, file.OwnerID); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
 	if err := database.DB.Create(&file).Error; err != nil {
-		response.ServerError(c, "failed to create download file")
+		response.ServerError(c, "failed to create download file"+err.Error())
 		return
 	}
 	response.Success(c, file)
@@ -73,6 +82,10 @@ func (s *Server) UpdateDownloadFile(c *gin.Context) {
 	}
 	file, err := req.ValidateForUpdate(item)
 	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := model.CheckDownloadOwnerExists(database.DB, file.OwnerType, file.OwnerID); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

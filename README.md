@@ -214,13 +214,25 @@ headers: { Authorization: `Bearer ${token}` }
 
 公开下载签名接口：`GET /api/v1/download-files/:id/sign-url`
 
-须同时满足以下三条件才下发 URL，否则返回 403：
+**两条独立权限线**：文章 `view_access_type` 管查看；资料 `access_type` 管下载，互不影响。
+
+**一期须同时满足以下三条件才下发 URL，否则 403：**
 
 1. `status = 1`（`StatusEnabled`）
 2. `access_type = "free"`（`AccessTypeFree`）
 3. `tags` 字符串包含「免费」
 
 `purchase_required` / `member_only` / `internal` 一期一律拒绝。
+
+**字段分工（定稿）：**
+
+| 字段 | 作用 |
+| --- | --- |
+| `access_type` | 权限主判据；二期会员包/学期包/单篇购买只据此 + 权益放行 |
+| `tags` 含「免费」 | 仅 `free` 模式的运营软开关（临时不让下：去掉「免费」即可，无需改 `access_type`） |
+| 文章 `view_access_type` | 与资料下载无关 |
+
+**二期（未实现）**：`free` 仍保留 tags 软开关；`purchase_required` / `member_only` 按权益校验，不看 `tags`。详见 `prd/002` §4、`AGENTS.md` §2。
 
 下载成功时：写入 `download_logs`、递增 `download_count`；若 `owner_type=article`，同步递增关联文章的下载数。
 

@@ -154,6 +154,23 @@ func CheckEssayArticleExists(db *gorm.DB, articleID *uint) error {
 
 // --- DownloadFile ---
 
+// CheckDownloadOwnerExists 校验资料归属资源是否存在；一期仅支持 owner_type=article。
+func CheckDownloadOwnerExists(db *gorm.DB, ownerType string, ownerID uint) error {
+	switch ownerType {
+	case TargetTypeArticle:
+		var count int64
+		if err := db.Model(&Article{}).Where("id = ?", ownerID).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return fmt.Errorf("article not found")
+		}
+		return nil
+	default:
+		return fmt.Errorf("invalid ownerType")
+	}
+}
+
 // UpdateMap 返回 GORM Updates 用的字段 map（支持零值写入；不含 downloadCount）。
 func (f DownloadFile) UpdateMap() map[string]interface{} {
 	return map[string]interface{}{

@@ -72,7 +72,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 		// 优秀作文: 删除
 		protectedAdmin.DELETE("/essay-examples/:id", h.DeleteEssayExample)
 
+		// 下载文件: 列表查询
 		protectedAdmin.GET("/download-files", h.ListDownloadFiles)
+		// 下载文件: 创建
 		protectedAdmin.POST("/download-files", h.CreateDownloadFile)
 		protectedAdmin.PUT("/download-files/:id", h.UpdateDownloadFile)
 		protectedAdmin.DELETE("/download-files/:id", h.DeleteDownloadFile)

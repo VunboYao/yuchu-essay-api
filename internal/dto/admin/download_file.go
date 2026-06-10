@@ -30,6 +30,16 @@ type CreateDownloadFileRequest = DownloadFileWriteRequest
 // UpdateDownloadFileRequest 更新下载资料请求。
 type UpdateDownloadFileRequest = DownloadFileWriteRequest
 
+// validOwnerType 一期仅允许挂在作文专题文章下；二期扩展 owner 类型时在此追加。
+func validOwnerType(ownerType string) bool {
+	switch ownerType {
+	case model.TargetTypeArticle:
+		return true
+	default:
+		return false
+	}
+}
+
 func validAccessType(accessType string) bool {
 	switch accessType {
 	case model.AccessTypeFree, model.AccessTypePurchaseRequired, model.AccessTypeMemberOnly, model.AccessTypeInternal:
@@ -46,6 +56,9 @@ func (r DownloadFileWriteRequest) normalize() (model.DownloadFile, error) {
 	}
 	if r.OwnerID == 0 {
 		return model.DownloadFile{}, fmt.Errorf("ownerId is required")
+	}
+	if !validOwnerType(ownerType) {
+		return model.DownloadFile{}, fmt.Errorf("invalid ownerType")
 	}
 	fileName := strings.TrimSpace(r.FileName)
 	if fileName == "" {
