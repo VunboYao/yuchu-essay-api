@@ -197,7 +197,7 @@ func articleFilters(db *gorm.DB, c *gin.Context) *gorm.DB {
 	if status := c.Query("status"); status != "" {
 		db = db.Where("status = ?", status)
 	}
-	// 关键词筛选
+	// 关键词筛选: 文章标题/作文题目
 	if keyword := c.Query("keyword"); keyword != "" {
 		db = db.Where("title LIKE ? OR essay_topic LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	}

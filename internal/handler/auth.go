@@ -68,16 +68,19 @@ type wxLoginRequest struct {
 // WxLogin 小程序登录（Day8）：按 openid 查找或创建用户并签发 user JWT。
 // 当前为开发占位：openid = "dev_" + code；配置 wechat 后应改为 code2session。
 func (s *Server) WxLogin(c *gin.Context) {
+	// 1. 绑定请求参数
 	var req wxLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-
+	// 2. 构建 openid
 	openid := "dev_" + req.Code
+	// 3. 查询用户
 	var user model.User
 	err := database.DB.Where("open_id = ?", openid).First(&user).Error
 	if err != nil {
+		// 4. 创建用户
 		user = model.User{
 			OpenID:      openid,
 			SourceScene: req.SourceScene,
@@ -90,6 +93,7 @@ func (s *Server) WxLogin(c *gin.Context) {
 			return
 		}
 	} else {
+		// 5. 更新用户信息
 		updates := map[string]interface{}{}
 		if req.SourceScene != "" {
 			updates["source_scene"] = req.SourceScene
@@ -105,10 +109,12 @@ func (s *Server) WxLogin(c *gin.Context) {
 		}
 	}
 
+	// 6. 签发用户 JWT
 	token, err := jwtutil.SignUser(s.Config.JWT.Secret, s.Config.JWT.Issuer, user.ID, user.OpenID)
 	if err != nil {
 		response.ServerError(c, "failed to sign token")
 		return
 	}
+	// 7. 返回响应
 	response.Success(c, gin.H{"token": token, "user": user})
 }

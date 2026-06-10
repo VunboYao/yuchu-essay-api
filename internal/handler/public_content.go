@@ -2,6 +2,8 @@
 package handler
 
 import (
+	"strings"
+
 	"course_server/internal/database"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
@@ -13,18 +15,22 @@ import (
 // Home 聚合推荐文章、热门文章、优秀作文与启用中的首页区块配置。
 func (s *Server) Home(c *gin.Context) {
 	var recommended []model.Article
+	// 查询推荐文章
 	database.DB.Where("status = ? AND is_recommended = ?", model.ArticleStatusPublished, true).
 		Omit("body_images").Order("sort_order DESC, id DESC").Limit(10).Find(&recommended)
 
 	var hot []model.Article
+	// 查询热门文章
 	database.DB.Where("status = ? AND is_hot = ?", model.ArticleStatusPublished, true).
 		Omit("body_images").Order("view_count DESC, id DESC").Limit(10).Find(&hot)
 
 	var essays []model.EssayExample
+	// 查询优秀作文
 	database.DB.Where("status = ?", model.StatusEnabled).
 		Order("sort_order DESC, id DESC").Limit(10).Find(&essays)
 
 	var blocks []model.HomeBlock
+	// 查询首页区块
 	database.DB.Where("status = ?", model.StatusEnabled).
 		Order("sort_order DESC, id DESC").Find(&blocks)
 
@@ -36,6 +42,7 @@ func (s *Server) Home(c *gin.Context) {
 	})
 }
 
+// Categories 查询教材分类单元
 func (s *Server) Categories(c *gin.Context) {
 	var list []model.TaxonomyUnit
 	if err := database.DB.Where("status = ?", model.StatusEnabled).
@@ -46,8 +53,10 @@ func (s *Server) Categories(c *gin.Context) {
 	response.Success(c, list)
 }
 
+// PublicArticles 查询已发布文章
 func (s *Server) PublicArticles(c *gin.Context) {
 	page, pageSize := pageParams(c)
+	// 构建查询条件
 	db := articleFilters(database.DB.Model(&model.Article{}), c).Where("status = ?", model.ArticleStatusPublished)
 	var total int64
 	db.Count(&total)
@@ -74,6 +83,7 @@ func (s *Server) PublicArticleDetail(c *gin.Context) {
 	}
 	database.DB.Model(&item).UpdateColumn("view_count", gorm.Expr("view_count + ?", 1))
 
+	// 查询可免费下载的资料列表
 	var downloads []model.DownloadFile
 	database.DB.Where("owner_type = ? AND owner_id = ? AND status = ? AND access_type = ? AND tags LIKE ?",
 		"article", item.ID, model.StatusEnabled, model.AccessTypeFree, "%免费%").
@@ -140,7 +150,7 @@ func (s *Server) PublicEssayDetail(c *gin.Context) {
 
 // Search 在已发布文章中检索，并写入 search_logs（供后台热门搜索统计）。
 func (s *Server) Search(c *gin.Context) {
-	keyword := c.Query("keyword")
+	keyword := strings.TrimSpace(c.Query("keyword"))
 	if keyword == "" {
 		response.BadRequest(c, "keyword is required")
 		return

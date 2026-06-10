@@ -93,13 +93,21 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// Day8–11：小程序公开 API（无需登录）
 	api := r.Group("/api/v1")
 	{
+		// 小程序登录
 		api.POST("/wx/login", h.WxLogin)
+		// 首页
 		api.GET("/home", h.Home)
+		// 分类
 		api.GET("/categories", h.Categories)
+		// 查询已发布的文章
 		api.GET("/articles", h.PublicArticles)
+		// 查询已发布文章详情
 		api.GET("/articles/:id", h.PublicArticleDetail)
+		// 查询优秀作文
 		api.GET("/essays", h.PublicEssays)
+		// 查询优秀作文详情
 		api.GET("/essays/:id", h.PublicEssayDetail)
+		// 搜索
 		api.GET("/search", h.Search)
 		api.GET("/download-files/:id/sign-url", h.SignDownloadURL)
 		api.POST("/track/view", h.TrackView)
