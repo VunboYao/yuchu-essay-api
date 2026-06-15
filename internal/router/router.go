@@ -30,10 +30,13 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// 先鉴权，再记录写操作审计日志（Day3）, 鉴权中间件和审计日志中间件
 	protectedAdmin.Use(middleware.AdminAuth(cfg), middleware.AdminOperationLog())
 	{
+		// 统计概览
 		protectedAdmin.GET("/stats/overview", h.StatsOverview)
+		// 热门文章10条
 		protectedAdmin.GET("/stats/hot-articles", h.StatsHotArticles)
+		// 热门搜索
 		protectedAdmin.GET("/stats/hot-searches", h.StatsHotSearches)
-
+		// 操作日志
 		protectedAdmin.GET("/operation-logs", h.ListOperationLogs)
 
 		// 教材分类单元: 查询
@@ -109,6 +112,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 		api.GET("/essays/:id", h.PublicEssayDetail)
 		// 搜索
 		api.GET("/search", h.Search)
+		// 下载文件: 签名下载URL
 		api.GET("/download-files/:id/sign-url", h.SignDownloadURL)
 		api.POST("/track/view", h.TrackView)
 		api.POST("/track/share", h.TrackShare)

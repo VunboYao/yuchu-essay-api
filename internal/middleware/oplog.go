@@ -18,23 +18,30 @@ func AdminOperationLog() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
+		// 如果请求方法为 GET 或 OPTIONS，则不记录审计日志
 		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodOptions {
 			return
 		}
+		// 如果响应状态码小于 200 或大于等于 300，则不记录审计日志
 		if c.Writer.Status() < http.StatusOK || c.Writer.Status() >= http.StatusMultipleChoices {
 			return
 		}
+		// 获取管理员ID
 		adminID, _ := c.Get("auth_id")
 		id, _ := adminID.(uint)
+		// 如果管理员ID为0，则不记录审计日志
 		if id == 0 {
 			return
 		}
+		// 获取目标ID
 		targetID := 0
+		// 如果路径参数 id 存在，则获取目标ID
 		if raw := c.Param("id"); raw != "" {
 			if id, err := strconv.Atoi(raw); err == nil && id > 0 {
 				targetID = id
 			}
 		}
+		// 写入审计日志
 		database.DB.Create(&model.AdminOperationLog{
 			AdminID:    id,
 			Action:     c.Request.Method + " " + c.FullPath(),

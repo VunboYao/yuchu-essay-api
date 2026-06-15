@@ -133,18 +133,22 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 		response.BadRequest(c, "invalid id")
 		return
 	}
+	// 根据id查询下载文件
 	var file model.DownloadFile
 	if err := database.DB.First(&file, id).Error; err != nil {
 		response.NotFound(c, "download file not found")
 		return
 	}
+	// 校验下载文件是否免费
 	if !isPublicFreeDownload(file) {
 		response.Forbidden(c, "download file is not free")
 		return
 	}
-
+	// 获取当前用户ID, 没有则返回0
 	userID := currentAuthID(c)
+	// 事务写入下载日志
 	err = database.DB.Transaction(func(tx *gorm.DB) error {
+		// 写入下载日志
 		if err := tx.Create(&model.DownloadLog{
 			UserID:      userID,
 			FileID:      file.ID,
@@ -155,9 +159,11 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 		}).Error; err != nil {
 			return err
 		}
+		// 递增下载次数
 		if err := tx.Model(&file).UpdateColumn("download_count", gorm.Expr("download_count + ?", 1)).Error; err != nil {
 			return err
 		}
+		// 如果归属类型是文章，则递增文章的下载次数
 		if file.OwnerType == "article" {
 			if err := tx.Model(&model.Article{}).Where("id = ?", file.OwnerID).UpdateColumn("download_count", gorm.Expr("download_count + ?", 1)).Error; err != nil {
 				return err
@@ -171,7 +177,8 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"url":       pseudoSignedURL(file.FileURL),
+		"url": pseudoSignedURL(file.FileURL),
+		// 返回签名过期时间 5分钟
 		"expiresIn": 300,
 		"file":      file,
 	})
@@ -179,6 +186,7 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 
 // isPublicFreeDownload 一期 MVP 免费下载底线，purchase_required/member_only/internal 均不满足。
 func isPublicFreeDownload(file model.DownloadFile) bool {
+	// 状态为启用、访问权限为免费、标签包含免费
 	return file.Status == model.StatusEnabled &&
 		file.AccessType == model.AccessTypeFree &&
 		strings.Contains(file.Tags, "免费")

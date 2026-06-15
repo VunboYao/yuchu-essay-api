@@ -56,10 +56,10 @@ func (s *Server) StatsHotSearches(c *gin.Context) {
 	}
 	var rows []row
 	if err := database.DB.Model(&model.SearchLog{}).
-		Select("keyword, count(*) as count").
-		Group("keyword").
-		Order("count DESC").
-		Limit(20).
+		Select("keyword, count(*) as count"). // 统计关键词搜索次数
+		Group("keyword").                     // 分组统计
+		Order("count DESC").                  // 按搜索次数降序
+		Limit(20).                            // 限制20条
 		Scan(&rows).Error; err != nil {
 		response.ServerError(c, "failed to list hot searches")
 		return

@@ -11,11 +11,15 @@ import (
 
 // ListOperationLogs 分页查询操作审计，支持按管理员、目标类型筛选。
 func (s *Server) ListOperationLogs(c *gin.Context) {
+	// 分页参数
 	page, pageSize := pageParams(c)
+	// 数据库模型
 	db := database.DB.Model(&model.AdminOperationLog{})
+	// 管理员ID
 	if adminID := c.Query("adminId"); adminID != "" {
 		db = db.Where("admin_id = ?", adminID)
 	}
+	// 目标类型
 	if targetType := c.Query("targetType"); targetType != "" {
 		db = db.Where("target_type = ?", targetType)
 	}
