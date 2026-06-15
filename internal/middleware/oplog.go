@@ -11,6 +11,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	ctxOpLogRemark   = "oplog_remark"
+	ctxOpLogTargetID = "oplog_target_id"
+)
+
+// SetOpLogRemark 由 handler 在写操作成功后调用，供审计中间件写入 remark。
+func SetOpLogRemark(c *gin.Context, remark string) {
+	c.Set(ctxOpLogRemark, remark)
+}
+
+// SetOpLogTargetID 供 POST 创建类接口补充 targetId（路径无 :id 时中间件默认为 0）。
+func SetOpLogTargetID(c *gin.Context, id uint) {
+	c.Set(ctxOpLogTargetID, id)
+}
+
 // AdminOperationLog 统一记录后台写操作审计（Day3）。
 // 仅记录 POST/PUT/DELETE 且响应 2xx 的请求；GET、预检与失败请求不写入。
 // 审计为旁路操作，写入失败不影响主流程（忽略错误）。
@@ -18,36 +33,42 @@ func AdminOperationLog() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
-		// 如果请求方法为 GET 或 OPTIONS，则不记录审计日志
 		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodOptions {
 			return
 		}
-		// 如果响应状态码小于 200 或大于等于 300，则不记录审计日志
 		if c.Writer.Status() < http.StatusOK || c.Writer.Status() >= http.StatusMultipleChoices {
 			return
 		}
-		// 获取管理员ID
 		adminID, _ := c.Get("auth_id")
 		id, _ := adminID.(uint)
-		// 如果管理员ID为0，则不记录审计日志
 		if id == 0 {
 			return
 		}
-		// 获取目标ID
 		targetID := 0
-		// 如果路径参数 id 存在，则获取目标ID
 		if raw := c.Param("id"); raw != "" {
-			if id, err := strconv.Atoi(raw); err == nil && id > 0 {
-				targetID = id
+			if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+				targetID = parsed
 			}
 		}
-		// 写入审计日志
-		database.DB.Create(&model.AdminOperationLog{
+		if targetID == 0 {
+			if ctxID, ok := c.Get(ctxOpLogTargetID); ok {
+				if v, ok := ctxID.(uint); ok && v > 0 {
+					targetID = int(v)
+				}
+			}
+		}
+		log := model.AdminOperationLog{
 			AdminID:    id,
 			Action:     c.Request.Method + " " + c.FullPath(),
 			TargetType: resourceFromPath(c.FullPath()),
 			TargetID:   uint(targetID),
-		})
+		}
+		if remark, ok := c.Get(ctxOpLogRemark); ok {
+			if s, ok := remark.(string); ok {
+				log.Remark = strings.TrimSpace(s)
+			}
+		}
+		database.DB.Create(&log)
 	}
 }
 

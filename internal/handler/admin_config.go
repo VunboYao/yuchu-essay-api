@@ -7,6 +7,7 @@ import (
 
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
+	"course_server/internal/middleware"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
@@ -48,6 +49,8 @@ func (s *Server) UpsertHomeBlock(c *gin.Context) {
 			response.ServerError(c, "failed to save home block")
 			return
 		}
+		middleware.SetOpLogRemark(c, "创建首页区块："+block.BlockKey)
+		middleware.SetOpLogTargetID(c, block.ID)
 		response.Success(c, block)
 		return
 	}
@@ -55,6 +58,7 @@ func (s *Server) UpsertHomeBlock(c *gin.Context) {
 		response.ServerError(c, "failed to save home block")
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新首页区块："+existing.BlockKey)
 	response.Success(c, existing)
 }
 
@@ -92,6 +96,8 @@ func (s *Server) UpsertAdSlot(c *gin.Context) {
 			response.ServerError(c, "failed to save ad slot")
 			return
 		}
+		middleware.SetOpLogRemark(c, "创建广告位："+slot.SlotKey)
+		middleware.SetOpLogTargetID(c, slot.ID)
 		response.Success(c, slot)
 		return
 	}
@@ -99,6 +105,7 @@ func (s *Server) UpsertAdSlot(c *gin.Context) {
 		response.ServerError(c, "failed to save ad slot")
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新广告位："+existing.SlotKey)
 	response.Success(c, existing)
 }
 
@@ -136,6 +143,8 @@ func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
 			response.ServerError(c, "failed to save official account config")
 			return
 		}
+		middleware.SetOpLogRemark(c, "创建公众号配置："+cfg.Scene)
+		middleware.SetOpLogTargetID(c, cfg.ID)
 		response.Success(c, cfg)
 		return
 	}
@@ -143,11 +152,13 @@ func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
 		response.ServerError(c, "failed to save official account config")
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新公众号配置："+existing.Scene)
 	response.Success(c, existing)
 }
 
 // UploadSTS 封面上传临时凭证（Day7 占位）；需配置 config.yaml 中 oss 后实现真实 STS。
 func (s *Server) UploadSTS(c *gin.Context) {
+	middleware.SetOpLogRemark(c, "获取 OSS 上传凭证（占位）")
 	response.Success(c, gin.H{
 		"mode":    "placeholder",
 		"message": "configure OSS credentials before enabling direct upload",

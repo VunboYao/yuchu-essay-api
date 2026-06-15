@@ -2,21 +2,29 @@
 package handler
 
 import (
+	"fmt"
+
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
+	"course_server/internal/middleware"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
 
+// taxonomyUnitLabel 生成教材分类单元标签
+func taxonomyUnitLabel(unit model.TaxonomyUnit) string {
+	return fmt.Sprintf("%d年级%s册第%d单元", unit.Grade, unit.Semester, unit.Unit)
+}
+
 // ListTaxonomyUnits 分页查询教材分类单元。
 func (s *Server) ListTaxonomyUnits(c *gin.Context) {
 	// 分页参数
 	page, pageSize := pageParams(c)
-	// 数据库模型
+	// 数据库模型: 教材分类单元
 	db := database.DB.Model(&model.TaxonomyUnit{})
-	// 年级筛选
+	// 年级筛选: 年级
 	if grade := c.Query("grade"); grade != "" {
 		db = db.Where("grade = ?", grade)
 	}
@@ -70,6 +78,8 @@ func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 		response.ServerError(c, "failed to create taxonomy unit")
 		return
 	}
+	middleware.SetOpLogRemark(c, "创建分类单元："+taxonomyUnitLabel(unit))
+	middleware.SetOpLogTargetID(c, unit.ID)
 	response.Success(c, unit)
 }
 
@@ -107,6 +117,7 @@ func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
 		response.ServerError(c, "failed to update taxonomy unit")
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新分类单元："+taxonomyUnitLabel(item))
 	response.Success(c, item)
 }
 
@@ -155,6 +166,8 @@ func (s *Server) CreateTag(c *gin.Context) {
 		response.ServerError(c, "failed to create tag")
 		return
 	}
+	middleware.SetOpLogRemark(c, "创建标签："+tag.Name)
+	middleware.SetOpLogTargetID(c, tag.ID)
 	response.Success(c, tag)
 }
 
@@ -192,5 +205,6 @@ func (s *Server) UpdateTag(c *gin.Context) {
 		response.ServerError(c, "failed to update tag")
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新标签："+item.Name)
 	response.Success(c, item)
 }

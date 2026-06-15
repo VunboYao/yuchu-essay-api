@@ -7,6 +7,7 @@ import (
 
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
+	"course_server/internal/middleware"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
@@ -64,6 +65,8 @@ func (s *Server) CreateArticle(c *gin.Context) {
 		response.ServerError(c, "failed to create article")
 		return
 	}
+	middleware.SetOpLogRemark(c, "创建文章：《"+article.Title+"》")
+	middleware.SetOpLogTargetID(c, article.ID)
 	response.Success(c, gin.H{
 		"article": article,
 		"tags":    s.articleTags(article.ID),
@@ -131,6 +134,7 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 		response.ServerError(c, "failed to update article:"+err.Error())
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新文章：《"+item.Title+"》")
 	response.Success(c, gin.H{
 		"article": item,
 		"tags":    s.articleTags(item.ID),
@@ -172,6 +176,13 @@ func (s *Server) UpdateArticleStatus(c *gin.Context) {
 	}
 
 	database.DB.First(&item, id)
+	var statusRemark string
+	if req.Status == model.ArticleStatusPublished {
+		statusRemark = "上架文章：《" + item.Title + "》"
+	} else {
+		statusRemark = "下架文章：《" + item.Title + "》"
+	}
+	middleware.SetOpLogRemark(c, statusRemark)
 	response.Success(c, gin.H{"id": id, "status": item.Status, "publishedAt": item.PublishedAt})
 }
 

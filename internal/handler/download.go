@@ -8,6 +8,7 @@ import (
 
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
+	"course_server/internal/middleware"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
@@ -61,6 +62,8 @@ func (s *Server) CreateDownloadFile(c *gin.Context) {
 		response.ServerError(c, "failed to create download file"+err.Error())
 		return
 	}
+	middleware.SetOpLogRemark(c, "创建下载资料："+file.FileName)
+	middleware.SetOpLogTargetID(c, file.ID)
 	response.Success(c, file)
 }
 
@@ -97,6 +100,7 @@ func (s *Server) UpdateDownloadFile(c *gin.Context) {
 		response.ServerError(c, "failed to update download file")
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新下载资料："+item.FileName)
 	response.Success(c, item)
 }
 
@@ -121,6 +125,7 @@ func (s *Server) DeleteDownloadFile(c *gin.Context) {
 		response.ServerError(c, "failed to delete download file")
 		return
 	}
+	middleware.SetOpLogRemark(c, "删除下载资料："+item.FileName)
 	response.Success(c, gin.H{"id": id})
 }
 

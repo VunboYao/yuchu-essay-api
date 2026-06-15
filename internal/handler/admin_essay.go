@@ -4,6 +4,7 @@ package handler
 import (
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
+	"course_server/internal/middleware"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
 
@@ -88,6 +89,8 @@ func (s *Server) CreateEssayExample(c *gin.Context) {
 		response.ServerError(c, "failed to create essay example")
 		return
 	}
+	middleware.SetOpLogRemark(c, "创建优秀作文：《"+essay.Title+"》")
+	middleware.SetOpLogTargetID(c, essay.ID)
 	response.Success(c, gin.H{
 		"essay": essay,
 		"tags":  s.essayTags(essay.ID),
@@ -132,6 +135,7 @@ func (s *Server) UpdateEssayExample(c *gin.Context) {
 		response.ServerError(c, "failed to update essay example")
 		return
 	}
+	middleware.SetOpLogRemark(c, "更新优秀作文：《"+item.Title+"》")
 	response.Success(c, gin.H{
 		"essay": item,
 		"tags":  s.essayTags(item.ID),
@@ -144,14 +148,15 @@ func (s *Server) DeleteEssayExample(c *gin.Context) {
 		response.BadRequest(c, "invalid id")
 		return
 	}
-	result := database.DB.Delete(&model.EssayExample{}, id)
-	if result.Error != nil {
-		response.ServerError(c, "failed to delete essay example")
-		return
-	}
-	if result.RowsAffected == 0 {
+	var item model.EssayExample
+	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "essay example not found")
 		return
 	}
+	if err := database.DB.Delete(&item).Error; err != nil {
+		response.ServerError(c, "failed to delete essay example")
+		return
+	}
+	middleware.SetOpLogRemark(c, "删除优秀作文：《"+item.Title+"》")
 	response.Success(c, gin.H{"id": id})
 }
