@@ -15,8 +15,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// ListHomeBlocks 查询首页区块列表
 func (s *Server) ListHomeBlocks(c *gin.Context) {
-	var list []model.HomeBlock
+	var list []model.HomeBlock // 首页区块列表
 	if err := database.DB.Order("sort_order DESC, id DESC").Find(&list).Error; err != nil {
 		response.ServerError(c, "failed to list home blocks")
 		return
@@ -24,41 +25,54 @@ func (s *Server) ListHomeBlocks(c *gin.Context) {
 	response.Success(c, list)
 }
 
+// UpsertHomeBlock 创建或更新首页区块
 func (s *Server) UpsertHomeBlock(c *gin.Context) {
+	// 绑定请求参数
 	var req admindto.UpsertHomeBlockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 按 blockKey 查找已有区块
 	existing, findErr := model.FindHomeBlockByKey(database.DB, strings.TrimSpace(req.BlockKey))
+	// 如果查找失败且不是记录不存在，则返回错误
 	if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
 		response.ServerError(c, "failed to save home block")
 		return
 	}
+	// 如果查找成功，则使用已有状态
 	defaultStatus := model.StatusEnabled
 	if findErr == nil {
 		defaultStatus = existing.Status
 	}
+	// 校验请求参数
 	block, err := req.Validate(defaultStatus)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 如果记录不存在，则创建新记录
 	if errors.Is(findErr, gorm.ErrRecordNotFound) {
+		// 创建新记录
 		if err := database.DB.Create(&block).Error; err != nil {
 			response.ServerError(c, "failed to save home block")
 			return
 		}
+		// 设置操作日志
 		middleware.SetOpLogRemark(c, "创建首页区块："+block.BlockKey)
 		middleware.SetOpLogTargetID(c, block.ID)
+		// 返回成功
 		response.Success(c, block)
 		return
 	}
+	// 更新记录
 	if err := UpdateAndReload(database.DB, &existing, block.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to save home block")
 		return
 	}
+	// 设置操作日志
 	middleware.SetOpLogRemark(c, "更新首页区块："+existing.BlockKey)
+	// 返回成功
 	response.Success(c, existing)
 }
 

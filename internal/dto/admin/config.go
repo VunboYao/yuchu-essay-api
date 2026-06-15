@@ -42,10 +42,12 @@ func (r UpsertHomeBlockRequest) normalize() (model.HomeBlock, error) {
 }
 
 func (r UpsertHomeBlockRequest) Validate(defaultStatus int) (model.HomeBlock, error) {
+	// 规范化请求参数
 	block, err := r.normalize()
 	if err != nil {
 		return model.HomeBlock{}, err
 	}
+	// 解析状态
 	status, err := dto.ResolveStatus(r.Status, defaultStatus)
 	if err != nil {
 		return model.HomeBlock{}, err
