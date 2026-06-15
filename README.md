@@ -257,6 +257,13 @@ headers: { Authorization: `Bearer ${token}` }
 2. 在 `internal/database/migrate.go` 的 `AutoMigrate` 中按分组追加（顺序：**共用 → 后台 → 小程序 → 二期订单**）
 3. 在 `db_comments.go` 的 `tableCommentEntries` 中追加表注释（与 migrate 分组一致）
 
+**本地一次性库表调整（详见 [AGENTS.md §8](./AGENTS.md#8-本地数据库变更约定)）：**
+
+- 当前为本地开发：删旧列、改列类型、历史数据修复等**只在本机执行一次**即可
+- **不要**把这类 DDL/DML 长期写在 `migrate.go` 或启动流程里反复执行
+- 保留在启动中的仅有：`AutoMigrate`（按 model 同步结构）与 `ApplyTableComments`
+- 临时迁移 SQL 可在本地跑通后从代码中移除；需要留痕时写在 PR/提交说明，而非常驻仓库
+
 **二期订单/支付约定：**
 
 - 新表只放在 `model_order.go`（或 `model_order_*.go`），**不改** `model_shared.go` 中 `Article` 等内容主表
@@ -320,7 +327,7 @@ status, err := dto.ResolveStatus(ptr, default)   // 可选 status
 **3. 写库辅助（`internal/handler/helpers_write.go`）**
 
 - 更新使用 `map[string]interface{}` + `UpdateAndReload`，避免零值被跳过、响应返回旧数据
-- 运营配置 Upsert 按唯一键（`blockKey` / `slotKey` / `scene`）查找后 Create 或 Update，不依赖客户端传 `id`
+- 运营配置 Upsert 按唯一键（`slotKey` / `scene`）查找后 Create 或 Update；首页入口 `home_blocks` 使用标准 `POST` + `PUT /:id` CRUD
 
 **4. handler 模板（薄层）**
 
@@ -342,7 +349,8 @@ database.DB.Create(&tag)
 | 作文专题 | `CreateArticle` / `UpdateArticle` | `dto/admin/article.go` |
 | 下载资料 | `CreateDownloadFile` / `UpdateDownloadFile` | `dto/admin/download_file.go` |
 | 优秀作文 | `CreateEssayExample` / `UpdateEssayExample` | `dto/admin/essay_example.go` |
-| 运营配置 | `UpsertHomeBlock` / `UpsertAdSlot` / `UpsertOfficialAccountConfig` | `dto/admin/config.go` |
+| 首页入口 | `CreateHomeBlock` / `UpdateHomeBlock` | `dto/admin/config.go` |
+| 运营配置 | `UpsertAdSlot` / `UpsertOfficialAccountConfig` | `dto/admin/config.go` |
 
 未迁移：`track.go` 埋点、`auth.go` 登录（服务端构造数据，风险较低）。`UpdateArticleStatus` 等专用接口保持独立 struct。
 

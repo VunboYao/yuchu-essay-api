@@ -29,7 +29,7 @@ var tableCommentEntries = []struct {
 	{table: "essay_example_tags", comment: TableScopeShared + "范文与标签关联"},
 	{table: "download_files", comment: TableScopeShared + "下载资料元数据（含二期权限字段预留）"},
 	{table: "ad_slots", comment: TableScopeShared + "广告位配置（后台配置、小程序展示）"},
-	{table: "home_blocks", comment: TableScopeShared + "首页区块配置"},
+	{table: "home_blocks", comment: TableScopeShared + "首页可配置入口（图标/标题/跳转）"},
 	{table: "official_account_configs", comment: TableScopeShared + "公众号导流场景配置"},
 	// --- 后台 ---
 	{table: "admins", comment: TableScopeAdmin + "后台管理员账号"},

@@ -9,46 +9,84 @@ import (
 	"course_server/internal/model"
 )
 
-// UpsertHomeBlockRequest 首页区块 upsert 入参（按 blockKey 匹配已有记录）。
-type UpsertHomeBlockRequest struct {
-	BlockKey    string `json:"blockKey" binding:"required"`
-	Title       string `json:"title" binding:"required"`
-	ContentType string `json:"contentType" binding:"required"`
-	ConfigJSON  string `json:"configJson"`
-	SortOrder   int    `json:"sortOrder"`
-	Status      *int   `json:"status"`
+// HomeBlockWriteRequest 首页入口创建/更新共用入参（见 prd/002 §6.1）。
+type HomeBlockWriteRequest struct {
+	Title     string `json:"title" binding:"required"`
+	Icon      string `json:"icon" binding:"required"`
+	NavType   string `json:"navType" binding:"required"`
+	Path      string `json:"path" binding:"required"`
+	SortOrder int    `json:"sortOrder"`
+	Status    *int   `json:"status"`
 }
 
-func (r UpsertHomeBlockRequest) normalize() (model.HomeBlock, error) {
-	blockKey := strings.TrimSpace(r.BlockKey)
-	if blockKey == "" {
-		return model.HomeBlock{}, fmt.Errorf("blockKey is required")
-	}
+// CreateHomeBlockRequest 创建首页入口。
+type CreateHomeBlockRequest = HomeBlockWriteRequest
+
+// UpdateHomeBlockRequest 更新首页入口。
+type UpdateHomeBlockRequest = HomeBlockWriteRequest
+
+func (r HomeBlockWriteRequest) normalize() (model.HomeBlock, error) {
 	title := strings.TrimSpace(r.Title)
 	if title == "" {
 		return model.HomeBlock{}, fmt.Errorf("title is required")
 	}
-	contentType := strings.TrimSpace(r.ContentType)
-	if contentType == "" {
-		return model.HomeBlock{}, fmt.Errorf("contentType is required")
+	if len(title) > 120 {
+		return model.HomeBlock{}, fmt.Errorf("title exceeds max 120")
+	}
+	icon := strings.TrimSpace(r.Icon)
+	if icon == "" {
+		return model.HomeBlock{}, fmt.Errorf("icon is required")
+	}
+	if len(icon) > 500 {
+		return model.HomeBlock{}, fmt.Errorf("icon exceeds max 500")
+	}
+	navType := strings.TrimSpace(r.NavType)
+	if navType == "" {
+		return model.HomeBlock{}, fmt.Errorf("navType is required")
+	}
+	if !model.IsValidNavType(navType) {
+		return model.HomeBlock{}, fmt.Errorf("navType must be one of: navigateTo, switchTab, redirectTo, reLaunch")
+	}
+	path := strings.TrimSpace(r.Path)
+	if path == "" {
+		return model.HomeBlock{}, fmt.Errorf("path is required")
+	}
+	if len(path) > 500 {
+		return model.HomeBlock{}, fmt.Errorf("path exceeds max 500")
+	}
+	if !strings.HasPrefix(path, "/") {
+		return model.HomeBlock{}, fmt.Errorf("path must start with /")
 	}
 	return model.HomeBlock{
-		BlockKey:    blockKey,
-		Title:       title,
-		ContentType: contentType,
-		ConfigJSON:  r.ConfigJSON,
-		SortOrder:   r.SortOrder,
+		Title:     title,
+		Icon:      icon,
+		NavType:   navType,
+		Path:      path,
+		SortOrder: r.SortOrder,
 	}, nil
 }
 
-func (r UpsertHomeBlockRequest) Validate(defaultStatus int) (model.HomeBlock, error) {
-	// 规范化请求参数
+// ValidateForCreate 校验创建入参；status 未传时默认启用。
+func (r HomeBlockWriteRequest) ValidateForCreate() (model.HomeBlock, error) {
 	block, err := r.normalize()
 	if err != nil {
 		return model.HomeBlock{}, err
 	}
-	// 解析状态
-	status, err := dto.ResolveStatus(r.Status, defaultStatus)
+	status, err := dto.ResolveStatus(r.Status, model.StatusEnabled)
+	if err != nil {
+		return model.HomeBlock{}, err
+	}
+	block.Status = status
+	return block, nil
+}
+
+// ValidateForUpdate 校验更新入参；status 未传时保留 existing 原值。
+func (r HomeBlockWriteRequest) ValidateForUpdate(existing model.HomeBlock) (model.HomeBlock, error) {
+	block, err := r.normalize()
+	if err != nil {
+		return model.HomeBlock{}, err
+	}
+	status, err := dto.ResolveStatus(r.Status, existing.Status)
 	if err != nil {
 		return model.HomeBlock{}, err
 	}

@@ -152,17 +152,35 @@ type AdSlot struct {
 	UpdatedAt jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
-// HomeBlock 首页区块配置。
+// 小程序页面跳转方式，与 wx.navigateTo / switchTab 等 API 对应（见 prd/002 §6.1）。
+const (
+	NavTypeNavigateTo = "navigateTo"
+	NavTypeSwitchTab  = "switchTab"
+	NavTypeRedirectTo = "redirectTo"
+	NavTypeReLaunch   = "reLaunch"
+)
+
+// IsValidNavType 校验小程序跳转方式是否为允许枚举值。
+func IsValidNavType(navType string) bool {
+	switch navType {
+	case NavTypeNavigateTo, NavTypeSwitchTab, NavTypeRedirectTo, NavTypeReLaunch:
+		return true
+	default:
+		return false
+	}
+}
+
+// HomeBlock 首页可配置入口（图标 + 标题 + 跳转；推荐/热门/优秀作文固定区不在此表配置）。
 type HomeBlock struct {
-	ID          uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
-	BlockKey    string        `gorm:"size:80;uniqueIndex;not null;comment:区块唯一键" json:"blockKey"`
-	Title       string        `gorm:"size:120;not null;comment:区块标题" json:"title"`
-	ContentType string        `gorm:"size:40;index;not null;comment:内容类型" json:"contentType"`
-	ConfigJSON  string        `gorm:"type:text;comment:区块配置JSON" json:"configJson"`
-	SortOrder   int           `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
-	Status      int           `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
-	CreatedAt   jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
-	UpdatedAt   jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
+	ID        uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
+	Title     string        `gorm:"size:120;not null;comment:入口标题" json:"title"`
+	Icon      string        `gorm:"size:500;not null;comment:图标URL" json:"icon"`
+	NavType   string        `gorm:"size:40;index;not null;default:navigateTo;comment:跳转方式" json:"navType"`
+	Path      string        `gorm:"size:500;not null;comment:小程序页面路径" json:"path"`
+	SortOrder int           `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
+	Status    int           `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
 // OfficialAccountConfig 公众号导流配置。

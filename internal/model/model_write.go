@@ -211,19 +211,19 @@ func (f DownloadFile) UpdateMap() map[string]interface{} {
 
 func (b HomeBlock) UpdateMap() map[string]interface{} {
 	return map[string]interface{}{
-		"block_key":    b.BlockKey,
-		"title":        b.Title,
-		"content_type": b.ContentType,
-		"config_json":  b.ConfigJSON,
-		"sort_order":   b.SortOrder,
-		"status":       b.Status,
+		"title":      b.Title,
+		"icon":       b.Icon,
+		"nav_type":   b.NavType,
+		"path":       b.Path,
+		"sort_order": b.SortOrder,
+		"status":     b.Status,
 	}
 }
 
-// FindHomeBlockByKey 按 blockKey 查找区块；不存在时返回 gorm.ErrRecordNotFound。
-func FindHomeBlockByKey(db *gorm.DB, blockKey string) (HomeBlock, error) {
+// FindHomeBlockByID 按 id 查找首页入口；不存在时返回 gorm.ErrRecordNotFound。
+func FindHomeBlockByID(db *gorm.DB, id uint) (HomeBlock, error) {
 	var block HomeBlock
-	err := db.Where("block_key = ?", blockKey).First(&block).Error
+	err := db.First(&block, id).Error
 	return block, err
 }
 

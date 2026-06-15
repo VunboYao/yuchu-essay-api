@@ -84,10 +84,12 @@ func Setup(cfg *config.Config) *gin.Engine {
 		// 文件: 删除
 		protectedAdmin.DELETE("/download-files/:id", h.DeleteDownloadFile)
 
-		// 首页区块: 列表查询
+		// 首页入口: 列表查询
 		protectedAdmin.GET("/home-blocks", h.ListHomeBlocks)
-		// 首页区块: 创建或更新
-		protectedAdmin.POST("/home-blocks", h.UpsertHomeBlock)
+		// 首页入口: 创建
+		protectedAdmin.POST("/home-blocks", h.CreateHomeBlock)
+		// 首页入口: 更新
+		protectedAdmin.PUT("/home-blocks/:id", h.UpdateHomeBlock)
 		// 广告位: 列表查询
 		protectedAdmin.GET("/ad-slots", h.ListAdSlots)
 		// 广告位: 创建或更新

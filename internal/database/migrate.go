@@ -39,9 +39,5 @@ func AutoMigrate() error {
 	); err != nil {
 		return err
 	}
-	// 历史数据 article_id=0 与「未关联」语义一致，统一置 NULL 以通过可空外键
-	if err := DB.Exec("UPDATE essay_examples SET article_id = NULL WHERE article_id = 0").Error; err != nil {
-		return err
-	}
 	return model.ApplyTableComments(DB)
 }
