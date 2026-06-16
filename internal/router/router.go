@@ -36,6 +36,10 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.GET("/stats/hot-articles", h.StatsHotArticles)
 		// 热门搜索词
 		protectedAdmin.GET("/stats/hot-searches", h.StatsHotSearches)
+		// 免费资料下载排行
+		protectedAdmin.GET("/stats/hot-downloads", h.StatsHotDownloads)
+		// 广告曝光/点击统计
+		protectedAdmin.GET("/stats/ad-events", h.StatsAdEvents)
 		// 操作日志
 		protectedAdmin.GET("/operation-logs", h.ListOperationLogs)
 

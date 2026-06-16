@@ -179,8 +179,11 @@ func ValidAdType(t string) bool {
 
 // 广告行为事件类型（小程序埋点 POST /track/ad 与下载解锁 POST ad-unlock）。
 const (
-	AdEventExpose          = "expose"
-	AdEventClick           = "click"
+	// 曝光
+	AdEventExpose = "expose"
+	// 点击
+	AdEventClick = "click"
+	// 激励完成
 	AdEventRewardedComplete = "rewarded_complete"
 )
 
