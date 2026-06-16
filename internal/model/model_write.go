@@ -3,6 +3,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -187,6 +188,60 @@ func CheckDownloadOwnerExists(db *gorm.DB, ownerType string, ownerID uint) error
 		return nil
 	default:
 		return fmt.Errorf("invalid ownerType")
+	}
+}
+
+var (
+	// ErrInvalidFavoriteTargetType 收藏目标类型非法（非 article/essay）。
+	ErrInvalidFavoriteTargetType = errors.New("invalid targetType")
+	// ErrFavoriteArticleNotFound 文章不存在或未发布，不可收藏。
+	ErrFavoriteArticleNotFound = errors.New("article not found")
+	// ErrFavoriteEssayNotFound 优秀作文不存在或未启用，不可收藏。
+	ErrFavoriteEssayNotFound = errors.New("essay not found")
+	// ErrFavoriteNotFound 当前用户无对应收藏记录。
+	ErrFavoriteNotFound = errors.New("favorite not found")
+)
+
+// ValidateFavoriteTargetType 校验收藏目标类型是否为 article 或 essay。
+func ValidateFavoriteTargetType(targetType string) error {
+	switch targetType {
+	case TargetTypeArticle, TargetTypeEssay:
+		return nil
+	default:
+		return ErrInvalidFavoriteTargetType
+	}
+}
+
+// CheckFavoriteTargetExists 校验收藏目标存在且对小程序可见（已发布文章 / 启用范文）。
+func CheckFavoriteTargetExists(db *gorm.DB, targetType string, targetID uint) error {
+	if err := ValidateFavoriteTargetType(targetType); err != nil {
+		return err
+	}
+	switch targetType {
+	case TargetTypeArticle:
+		var count int64
+		if err := db.Model(&Article{}).
+			Where("id = ? AND status = ?", targetID, ArticleStatusPublished).
+			Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return ErrFavoriteArticleNotFound
+		}
+		return nil
+	case TargetTypeEssay:
+		var count int64
+		if err := db.Model(&EssayExample{}).
+			Where("id = ? AND status = ?", targetID, StatusEnabled).
+			Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return ErrFavoriteEssayNotFound
+		}
+		return nil
+	default:
+		return ErrInvalidFavoriteTargetType
 	}
 }
 

@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 
 	"course_server/internal/database"
@@ -20,12 +21,13 @@ type favoriteRequest struct {
 
 func (s *Server) ListFavorites(c *gin.Context) {
 	userID := currentAuthID(c)
-	var list []model.Favorite
-	if err := database.DB.Where("user_id = ?", userID).Order("id DESC").Find(&list).Error; err != nil {
+	page, pageSize := pageParams(c)
+	list, total, err := loadFavoriteListPage(userID, page, pageSize)
+	if err != nil {
 		response.ServerError(c, "failed to list favorites")
 		return
 	}
-	response.Success(c, list)
+	response.Page(c, list, total, page, pageSize)
 }
 
 // AddFavorite 收藏文章或优秀作文；唯一索引去重，仅在真正新增时回写目标 favorite_count。
@@ -37,9 +39,12 @@ func (s *Server) AddFavorite(c *gin.Context) {
 	if !bindJSON(c, &req) {
 		return
 	}
-	// 创建收藏记录
+	// 创建收藏记录（须先校验目标存在且可见）
 	fav := model.Favorite{UserID: userID, TargetType: req.TargetType, TargetID: req.TargetID}
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := model.CheckFavoriteTargetExists(tx, req.TargetType, req.TargetID); err != nil {
+			return err
+		}
 		res := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&fav)
 		if res.Error != nil {
 			return res.Error
@@ -50,19 +55,24 @@ func (s *Server) AddFavorite(c *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		response.ServerError(c, "failed to add favorite")
+		switch {
+		case errors.Is(err, model.ErrInvalidFavoriteTargetType):
+			response.BadRequest(c, err.Error())
+		case errors.Is(err, model.ErrFavoriteArticleNotFound), errors.Is(err, model.ErrFavoriteEssayNotFound):
+			response.NotFound(c, err.Error())
+		default:
+			response.ServerError(c, "failed to add favorite")
+		}
 		return
 	}
 	response.Success(c, fav)
 }
 
-// RemoveFavorite 取消收藏；仅在确实删除记录时递减目标 favorite_count（下限 0）。
+// RemoveFavorite 取消收藏；query 或 JSON body 传 targetType/targetId；仅在确实删除记录时递减 favorite_count。
 func (s *Server) RemoveFavorite(c *gin.Context) {
 	userID := currentAuthID(c)
-	targetType := c.Query("targetType")
-	targetID, _ := strconv.Atoi(c.Query("targetId"))
-	if targetType == "" || targetID == 0 {
-		response.BadRequest(c, "targetType and targetId are required")
+	targetType, targetID, ok := parseFavoriteTarget(c)
+	if !ok {
 		return
 	}
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
@@ -71,16 +81,55 @@ func (s *Server) RemoveFavorite(c *gin.Context) {
 		if res.Error != nil {
 			return res.Error
 		}
-		if res.RowsAffected > 0 {
-			return adjustFavoriteCount(tx, targetType, uint(targetID), -1)
+		if res.RowsAffected == 0 {
+			return model.ErrFavoriteNotFound
 		}
-		return nil
+		return adjustFavoriteCount(tx, targetType, uint(targetID), -1)
 	})
 	if err != nil {
-		response.ServerError(c, "failed to remove favorite")
+		switch {
+		case errors.Is(err, model.ErrFavoriteNotFound):
+			response.NotFound(c, err.Error())
+		default:
+			response.ServerError(c, "failed to remove favorite")
+		}
 		return
 	}
 	response.Success(c, gin.H{"targetType": targetType, "targetId": targetID})
+}
+
+// parseFavoriteTarget 从 query 或 JSON body 解析收藏目标；失败时已写入 400 响应。
+func parseFavoriteTarget(c *gin.Context) (targetType string, targetID int, ok bool) {
+	targetType = c.Query("targetType")
+	targetIDRaw := c.Query("targetId")
+	if targetType == "" && targetIDRaw == "" {
+		var req favoriteRequest
+		if !bindJSON(c, &req) {
+			return "", 0, false
+		}
+		targetType = req.TargetType
+		targetID = int(req.TargetID)
+	} else {
+		if targetType == "" || targetIDRaw == "" {
+			response.BadRequest(c, "targetType and targetId are required")
+			return "", 0, false
+		}
+		id, err := strconv.Atoi(targetIDRaw)
+		if err != nil || id <= 0 {
+			response.BadRequest(c, "invalid targetId")
+			return "", 0, false
+		}
+		targetID = id
+	}
+	if err := model.ValidateFavoriteTargetType(targetType); err != nil {
+		response.BadRequest(c, err.Error())
+		return "", 0, false
+	}
+	if targetID <= 0 {
+		response.BadRequest(c, "invalid targetId")
+		return "", 0, false
+	}
+	return targetType, targetID, true
 }
 
 // adjustFavoriteCount 按目标类型回写收藏计数；delta 为负时以 0 兜底，未知类型不处理。
