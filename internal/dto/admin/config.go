@@ -100,6 +100,7 @@ type UpsertAdSlotRequest struct {
 	SlotName  string `json:"slotName" binding:"required"`
 	Page      string `json:"page" binding:"required"`
 	Position  string `json:"position"`
+	AdType    string `json:"adType"`
 	AdUnitID  string `json:"adUnitId"`
 	SortOrder int    `json:"sortOrder"`
 	Status    *int   `json:"status"`
@@ -118,11 +119,22 @@ func (r UpsertAdSlotRequest) normalize() (model.AdSlot, error) {
 	if page == "" {
 		return model.AdSlot{}, fmt.Errorf("page is required")
 	}
+	adType := strings.TrimSpace(r.AdType)
+	if adType == "" {
+		adType = model.AdTypeBanner
+	}
+	if !model.ValidAdType(adType) {
+		return model.AdSlot{}, fmt.Errorf("adType must be banner or rewarded_video")
+	}
+	if adType == model.AdTypeRewardedVideo && page != model.AdPageDownload {
+		return model.AdSlot{}, fmt.Errorf("rewarded_video ad slot page must be download")
+	}
 	return model.AdSlot{
 		SlotKey:   slotKey,
 		SlotName:  slotName,
 		Page:      page,
 		Position:  strings.TrimSpace(r.Position),
+		AdType:    adType,
 		AdUnitID:  strings.TrimSpace(r.AdUnitID),
 		SortOrder: r.SortOrder,
 	}, nil

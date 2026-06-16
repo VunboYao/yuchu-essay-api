@@ -54,8 +54,7 @@ func (s *Server) ListTaxonomyUnits(c *gin.Context) {
 func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 	// 绑定请求参数
 	var req admindto.CreateTaxonomyUnitRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验请求参数
@@ -97,8 +96,7 @@ func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
 	}
 	// 绑定请求参数
 	var req admindto.UpdateTaxonomyUnitRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验请求参数
@@ -146,8 +144,7 @@ func (s *Server) ListTags(c *gin.Context) {
 func (s *Server) CreateTag(c *gin.Context) {
 	// 绑定请求参数
 	var req admindto.CreateTagRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验请求参数
@@ -185,8 +182,7 @@ func (s *Server) UpdateTag(c *gin.Context) {
 	}
 	// 绑定请求参数
 	var req admindto.UpdateTagRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验请求参数

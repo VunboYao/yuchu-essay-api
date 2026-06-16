@@ -233,6 +233,7 @@ func (s AdSlot) UpdateMap() map[string]interface{} {
 		"slot_name":  s.SlotName,
 		"page":       s.Page,
 		"position":   s.Position,
+		"ad_type":    s.AdType,
 		"ad_unit_id": s.AdUnitID,
 		"sort_order": s.SortOrder,
 		"status":     s.Status,
@@ -243,6 +244,11 @@ func FindAdSlotByKey(db *gorm.DB, slotKey string) (AdSlot, error) {
 	var slot AdSlot
 	err := db.Where("slot_key = ?", slotKey).First(&slot).Error
 	return slot, err
+}
+
+// FindDownloadGateSlot 查询资料下载激励视频门槛配置（固定 slotKey）。
+func FindDownloadGateSlot(db *gorm.DB) (AdSlot, error) {
+	return FindAdSlotByKey(db, AdSlotKeyDownloadRewardedVideo)
 }
 
 func (c OfficialAccountConfig) UpdateMap() map[string]interface{} {

@@ -42,6 +42,21 @@ func (s *Server) Home(c *gin.Context) {
 	})
 }
 
+// PublicAdSlots 返回启用中的广告位配置，供小程序按 slotKey 渲染流量主组件。
+// 可选 query page=home|article_detail|essay_detail|search 按所属页面过滤。
+func (s *Server) PublicAdSlots(c *gin.Context) {
+	q := database.DB.Where("status = ?", model.StatusEnabled)
+	if page := strings.TrimSpace(c.Query("page")); page != "" {
+		q = q.Where("page = ?", page)
+	}
+	var list []model.AdSlot
+	if err := q.Order("sort_order DESC, id DESC").Find(&list).Error; err != nil {
+		response.ServerError(c, "failed to list ad slots")
+		return
+	}
+	response.Success(c, list)
+}
+
 // Categories 查询教材分类单元
 func (s *Server) Categories(c *gin.Context) {
 	var list []model.TaxonomyUnit
@@ -92,7 +107,17 @@ func (s *Server) PublicArticleDetail(c *gin.Context) {
 	response.Success(c, gin.H{
 		"article":       item,
 		"freeDownloads": downloads,
+		"downloadGate":  buildDownloadGateResponse(),
 	})
+}
+
+// buildDownloadGateResponse 聚合全局下载激励视频门槛，供文章详情资料区使用。
+func buildDownloadGateResponse() model.DownloadGateInfo {
+	gate, err := model.FindDownloadGateSlot(database.DB)
+	if err != nil {
+		return model.DownloadGateInfo{Required: false}
+	}
+	return model.BuildDownloadGate(gate)
 }
 
 func (s *Server) PublicEssays(c *gin.Context) {

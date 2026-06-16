@@ -34,7 +34,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.GET("/stats/overview", h.StatsOverview)
 		// 热门文章10条
 		protectedAdmin.GET("/stats/hot-articles", h.StatsHotArticles)
-		// 热门搜索
+		// 热门搜索词
 		protectedAdmin.GET("/stats/hot-searches", h.StatsHotSearches)
 		// 操作日志
 		protectedAdmin.GET("/operation-logs", h.ListOperationLogs)
@@ -121,8 +121,12 @@ func Setup(cfg *config.Config) *gin.Engine {
 		api.GET("/essays/:id", h.PublicEssayDetail)
 		// 搜索
 		api.GET("/search", h.Search)
+		// 广告位配置（仅返回启用项，可选 ?page= 过滤）
+		api.GET("/ad-slots", h.PublicAdSlots)
 		// 下载文件: 签名下载URL
 		api.GET("/download-files/:id/sign-url", h.SignDownloadURL)
+		// 激励视频看完后签发下载 unlockToken
+		api.POST("/download-files/:id/ad-unlock", h.UnlockDownloadAd)
 		api.POST("/track/view", h.TrackView)
 		api.POST("/track/share", h.TrackShare)
 		api.POST("/track/search", h.TrackSearch)
@@ -133,11 +137,17 @@ func Setup(cfg *config.Config) *gin.Engine {
 	user := api.Group("")
 	user.Use(middleware.UserAuth(cfg))
 	{
+		// 我的页概览
 		user.GET("/mine", h.Mine)
+		// 我的收藏
 		user.GET("/favorites", h.ListFavorites)
+		// 收藏文章或优秀作文
 		user.POST("/favorites", h.AddFavorite)
+		// 取消收藏文章或优秀作文
 		user.DELETE("/favorites", h.RemoveFavorite)
+		// 浏览历史
 		user.GET("/history", h.History)
+		// 下载记录
 		user.GET("/downloads", h.Downloads)
 	}
 

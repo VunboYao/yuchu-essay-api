@@ -28,8 +28,7 @@ func (s *Server) ListHomeBlocks(c *gin.Context) {
 // CreateHomeBlock 创建首页入口
 func (s *Server) CreateHomeBlock(c *gin.Context) {
 	var req admindto.CreateHomeBlockRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	block, err := req.ValidateForCreate()
@@ -70,8 +69,7 @@ func (s *Server) UpdateHomeBlock(c *gin.Context) {
 	}
 	// 绑定请求参数
 	var req admindto.UpdateHomeBlockRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验请求参数
@@ -100,15 +98,16 @@ func (s *Server) ListAdSlots(c *gin.Context) {
 	response.Success(c, list)
 }
 
+// UpsertAdSlot 创建或更新广告位配置
 func (s *Server) UpsertAdSlot(c *gin.Context) {
 	var req admindto.UpsertAdSlotRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	existing, findErr := model.FindAdSlotByKey(database.DB, strings.TrimSpace(req.SlotKey))
+	// 如果记录不存在，则返回 server error
 	if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
-		response.ServerError(c, "failed to save ad slot")
+		response.ServerError(c, "failed to find ad slot")
 		return
 	}
 	defaultStatus := model.StatusEnabled
@@ -120,9 +119,13 @@ func (s *Server) UpsertAdSlot(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 更新时未传 adType 则保留原值，避免误覆盖为 banner
+	if findErr == nil && strings.TrimSpace(req.AdType) == "" {
+		slot.AdType = existing.AdType
+	}
 	if errors.Is(findErr, gorm.ErrRecordNotFound) {
 		if err := database.DB.Create(&slot).Error; err != nil {
-			response.ServerError(c, "failed to save ad slot")
+			response.ServerError(c, "failed to create ad slot")
 			return
 		}
 		middleware.SetOpLogRemark(c, "创建广告位："+slot.SlotKey)
@@ -131,7 +134,7 @@ func (s *Server) UpsertAdSlot(c *gin.Context) {
 		return
 	}
 	if err := UpdateAndReload(database.DB, &existing, slot.UpdateMap()); err != nil {
-		response.ServerError(c, "failed to save ad slot")
+		response.ServerError(c, "failed to update ad slot")
 		return
 	}
 	middleware.SetOpLogRemark(c, "更新广告位："+existing.SlotKey)
@@ -149,13 +152,12 @@ func (s *Server) ListOfficialAccountConfigs(c *gin.Context) {
 
 func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
 	var req admindto.UpsertOfficialAccountConfigRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	existing, findErr := model.FindOfficialAccountConfigByScene(database.DB, strings.TrimSpace(req.Scene))
 	if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
-		response.ServerError(c, "failed to save official account config")
+		response.ServerError(c, "failed to find official account config")
 		return
 	}
 	defaultStatus := model.StatusEnabled
@@ -169,7 +171,7 @@ func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
 	}
 	if errors.Is(findErr, gorm.ErrRecordNotFound) {
 		if err := database.DB.Create(&cfg).Error; err != nil {
-			response.ServerError(c, "failed to save official account config")
+			response.ServerError(c, "failed to create official account config")
 			return
 		}
 		middleware.SetOpLogRemark(c, "创建公众号配置："+cfg.Scene)
@@ -178,7 +180,7 @@ func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
 		return
 	}
 	if err := UpdateAndReload(database.DB, &existing, cfg.UpdateMap()); err != nil {
-		response.ServerError(c, "failed to save official account config")
+		response.ServerError(c, "failed to update official account config")
 		return
 	}
 	middleware.SetOpLogRemark(c, "更新公众号配置："+existing.Scene)

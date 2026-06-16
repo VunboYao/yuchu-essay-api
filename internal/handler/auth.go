@@ -22,8 +22,7 @@ type adminLoginRequest struct {
 func (s *Server) AdminLogin(c *gin.Context) {
 	var req adminLoginRequest
 	// 绑定请求参数
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -70,8 +69,7 @@ type wxLoginRequest struct {
 func (s *Server) WxLogin(c *gin.Context) {
 	// 1. 绑定请求参数
 	var req wxLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 2. 构建 openid

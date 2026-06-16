@@ -31,9 +31,10 @@ const (
 	ViewAccessMemberOnly       = "member_only"
 	ViewAccessPurchaseRequired = "purchase_required"
 
-	// 收藏/分享/浏览等行为的目标类型：文章 作文
-	TargetTypeArticle = "article"
-	TargetTypeEssay   = "essay"
+	// 收藏/分享/浏览等行为的目标类型：文章 作文 下载资料
+	TargetTypeArticle      = "article"
+	TargetTypeEssay         = "essay"
+	TargetTypeDownloadFile  = "download_file"
 
 	// 最大正文图片数量
 	MaxBodyImages = 20

@@ -138,6 +138,91 @@ type DownloadFile struct {
 
 // --- 运营配置（后台可配，小程序读取）---
 
+// PRD 一期固定广告位 slotKey（prd/001 §7、prd/002 §6.2）。
+const (
+	// 首页中间广告位
+	AdSlotKeyHomeFeedMid = "home_feed_mid"
+	// 文章详情中间广告位
+	AdSlotKeyArticleDetailMid = "article_detail_mid"
+	// 作文详情底部广告位
+	AdSlotKeyEssayDetailBottom = "essay_detail_bottom"
+	// 搜索结果中间广告位
+	AdSlotKeySearchResultMid = "search_result_mid"
+	// 资料下载激励视频门槛
+	AdSlotKeyDownloadRewardedVideo = "download_rewarded_video"
+)
+
+// 广告位所属页面标识，供后台与小程序按 page 查询过滤。
+const (
+	AdPageHome          = "home"
+	AdPageArticleDetail = "article_detail"
+	AdPageEssayDetail   = "essay_detail"
+	AdPageSearch        = "search"
+	AdPageDownload      = "download"
+)
+
+// 广告组件类型（微信流量主：Banner 与激励视频接入方式不同）。
+const (
+	AdTypeBanner        = "banner"
+	AdTypeRewardedVideo = "rewarded_video"
+)
+
+// ValidAdType 校验广告位类型枚举。
+func ValidAdType(t string) bool {
+	switch t {
+	case AdTypeBanner, AdTypeRewardedVideo:
+		return true
+	default:
+		return false
+	}
+}
+
+// 广告行为事件类型（小程序埋点 POST /track/ad 与下载解锁 POST ad-unlock）。
+const (
+	AdEventExpose          = "expose"
+	AdEventClick           = "click"
+	AdEventRewardedComplete = "rewarded_complete"
+)
+
+// ValidAdEventType 校验广告埋点事件类型。
+func ValidAdEventType(t string) bool {
+	switch t {
+	case AdEventExpose, AdEventClick, AdEventRewardedComplete:
+		return true
+	default:
+		return false
+	}
+}
+
+// DownloadGateInfo 文章详情等接口下发的下载激励视频门槛配置。
+type DownloadGateInfo struct {
+	Required bool   `json:"required"`
+	SlotKey  string `json:"slotKey,omitempty"`
+	AdType   string `json:"adType,omitempty"`
+	AdUnitID string `json:"adUnitId,omitempty"`
+}
+
+// IsDownloadGateActive 下载激励视频门槛是否生效（全局 slot 启用且已配置 unit-id）。
+func (s AdSlot) IsDownloadGateActive() bool {
+	return s.SlotKey == AdSlotKeyDownloadRewardedVideo &&
+		s.AdType == AdTypeRewardedVideo &&
+		s.Status == StatusEnabled &&
+		strings.TrimSpace(s.AdUnitID) != ""
+}
+
+// BuildDownloadGate 由下载 gate 广告位配置生成小程序下发结构。
+func BuildDownloadGate(slot AdSlot) DownloadGateInfo {
+	if !slot.IsDownloadGateActive() {
+		return DownloadGateInfo{Required: false}
+	}
+	return DownloadGateInfo{
+		Required: true,
+		SlotKey:  slot.SlotKey,
+		AdType:   slot.AdType,
+		AdUnitID: slot.AdUnitID,
+	}
+}
+
 // AdSlot 广告位配置。
 type AdSlot struct {
 	ID        uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
@@ -145,6 +230,7 @@ type AdSlot struct {
 	SlotName  string        `gorm:"size:120;not null;comment:广告位名称" json:"slotName"`
 	Page      string        `gorm:"size:80;index;not null;comment:所属页面" json:"page"`
 	Position  string        `gorm:"size:80;index;comment:页面内位置" json:"position"`
+	AdType    string        `gorm:"size:40;index;not null;default:banner;comment:广告类型 banner/rewarded_video" json:"adType"`
 	AdUnitID  string        `gorm:"size:120;comment:微信广告单元ID" json:"adUnitId"`
 	Status    int           `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
 	SortOrder int           `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`

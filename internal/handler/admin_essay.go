@@ -61,8 +61,7 @@ func (s *Server) GetEssayExample(c *gin.Context) {
 // CreateEssayExample 创建优秀作文。
 func (s *Server) CreateEssayExample(c *gin.Context) {
 	var req admindto.CreateEssayExampleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验入参
@@ -109,8 +108,7 @@ func (s *Server) UpdateEssayExample(c *gin.Context) {
 		return
 	}
 	var req admindto.UpdateEssayExampleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	essay, err := req.ValidateForUpdate(item)

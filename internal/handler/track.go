@@ -2,6 +2,9 @@
 package handler
 
 import (
+	"errors"
+	"strings"
+
 	"course_server/internal/database"
 	"course_server/internal/model"
 	"course_server/internal/pkg/response"
@@ -13,8 +16,7 @@ import (
 // TrackView 记录浏览；body 未带 userId 时尝试从 Bearer token 解析（未登录则为 0）。
 func (s *Server) TrackView(c *gin.Context) {
 	var req model.ViewLog
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	if req.UserID == 0 {
@@ -30,8 +32,7 @@ func (s *Server) TrackView(c *gin.Context) {
 // TrackShare 记录分享事件；目标为文章时事务内同步递增 share_count。
 func (s *Server) TrackShare(c *gin.Context) {
 	var req model.ShareLog
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	if req.UserID == 0 {
@@ -56,8 +57,7 @@ func (s *Server) TrackShare(c *gin.Context) {
 
 func (s *Server) TrackSearch(c *gin.Context) {
 	var req model.SearchLog
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	if req.UserID == 0 {
@@ -72,10 +72,32 @@ func (s *Server) TrackSearch(c *gin.Context) {
 
 func (s *Server) TrackAd(c *gin.Context) {
 	var req model.AdEvent
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
+	slotKey := strings.TrimSpace(req.SlotKey)
+	if slotKey == "" {
+		response.BadRequest(c, "slotKey is required")
+		return
+	}
+	if !model.ValidAdEventType(strings.TrimSpace(req.EventType)) {
+		response.BadRequest(c, "eventType must be expose, click or rewarded_complete")
+		return
+	}
+	if req.EventType == model.AdEventRewardedComplete {
+		response.BadRequest(c, "use POST /download-files/:id/ad-unlock for rewarded video unlock")
+		return
+	}
+	if _, err := model.FindAdSlotByKey(database.DB, slotKey); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.BadRequest(c, "unknown ad slot")
+			return
+		}
+		response.ServerError(c, "failed to track ad")
+		return
+	}
+	req.SlotKey = slotKey
+	req.EventType = strings.TrimSpace(req.EventType)
 	if req.UserID == 0 {
 		req.UserID = currentAuthID(c)
 	}

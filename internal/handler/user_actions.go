@@ -30,12 +30,14 @@ func (s *Server) ListFavorites(c *gin.Context) {
 
 // AddFavorite 收藏文章或优秀作文；唯一索引去重，仅在真正新增时回写目标 favorite_count。
 func (s *Server) AddFavorite(c *gin.Context) {
+	// 获取当前用户ID
 	userID := currentAuthID(c)
+	// 绑定请求参数
 	var req favoriteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
+	// 创建收藏记录
 	fav := model.Favorite{UserID: userID, TargetType: req.TargetType, TargetID: req.TargetID}
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
 		res := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&fav)

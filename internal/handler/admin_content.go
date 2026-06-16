@@ -37,8 +37,7 @@ func (s *Server) ListArticles(c *gin.Context) {
 func (s *Server) CreateArticle(c *gin.Context) {
 	// 绑定请求体
 	var req admindto.CreateArticleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验入参
@@ -106,8 +105,7 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 	}
 	// 绑定请求参数
 	var req admindto.UpdateArticleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	// 校验入参
@@ -152,8 +150,7 @@ func (s *Server) UpdateArticleStatus(c *gin.Context) {
 	var req struct {
 		Status int `json:"status"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+	if !bindJSON(c, &req) {
 		return
 	}
 	var item model.Article
