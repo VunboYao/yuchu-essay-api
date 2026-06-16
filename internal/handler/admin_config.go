@@ -51,13 +51,16 @@ func (s *Server) CreateHomeBlock(c *gin.Context) {
 
 // UpdateHomeBlock 更新首页入口
 func (s *Server) UpdateHomeBlock(c *gin.Context) {
+	// 获取路径参数 ID
 	id, err := pathID(c)
 	if err != nil {
 		response.BadRequest(c, "invalid id")
 		return
 	}
+	// 按 ID 查找已有记录
 	existing, findErr := model.FindHomeBlockByID(database.DB, uint(id))
 	if findErr != nil {
+		// 如果记录不存在，则返回 404
 		if errors.Is(findErr, gorm.ErrRecordNotFound) {
 			response.NotFound(c, "home block not found")
 			return
@@ -65,21 +68,26 @@ func (s *Server) UpdateHomeBlock(c *gin.Context) {
 		response.ServerError(c, "failed to update home block")
 		return
 	}
+	// 绑定请求参数
 	var req admindto.UpdateHomeBlockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 校验请求参数
 	block, err := req.ValidateForUpdate(existing)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 更新记录
 	if err := UpdateAndReload(database.DB, &existing, block.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update home block")
 		return
 	}
+	// 设置操作日志
 	middleware.SetOpLogRemark(c, "更新首页入口："+existing.Title)
+	// 返回成功
 	response.Success(c, existing)
 }
 
