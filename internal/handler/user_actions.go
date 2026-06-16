@@ -152,22 +152,24 @@ func adjustFavoriteCount(tx *gorm.DB, targetType string, targetID uint, delta in
 
 func (s *Server) History(c *gin.Context) {
 	userID := currentAuthID(c)
-	var list []model.ViewLog
-	if err := database.DB.Where("user_id = ?", userID).Order("created_at DESC").Limit(100).Find(&list).Error; err != nil {
+	page, pageSize := pageParams(c)
+	list, total, err := loadHistoryListPage(userID, page, pageSize)
+	if err != nil {
 		response.ServerError(c, "failed to list history")
 		return
 	}
-	response.Success(c, list)
+	response.Page(c, list, total, page, pageSize)
 }
 
 func (s *Server) Downloads(c *gin.Context) {
 	userID := currentAuthID(c)
-	var list []model.DownloadLog
-	if err := database.DB.Where("user_id = ?", userID).Order("created_at DESC").Limit(100).Find(&list).Error; err != nil {
+	page, pageSize := pageParams(c)
+	list, total, err := loadDownloadListPage(userID, page, pageSize)
+	if err != nil {
 		response.ServerError(c, "failed to list downloads")
 		return
 	}
-	response.Success(c, list)
+	response.Page(c, list, total, page, pageSize)
 }
 
 // Mine 我的页概览：收藏数、浏览记录数、下载记录数。
