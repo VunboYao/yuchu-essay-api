@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"errors"
 	"time"
 
 	"course_server/internal/database"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type adminLoginRequest struct {
@@ -77,6 +79,11 @@ func (s *Server) WxLogin(c *gin.Context) {
 	// 3. 查询用户
 	var user model.User
 	err := database.DB.Where("open_id = ?", openid).First(&user).Error
+	// 仅「记录不存在」才创建；其他 DB 错误直接返回，避免把瞬时故障误判为新用户
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		response.ServerError(c, "failed to query user")
+		return
+	}
 	if err != nil {
 		// 4. 创建用户
 		user = model.User{

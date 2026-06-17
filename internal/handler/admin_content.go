@@ -153,6 +153,11 @@ func (s *Server) UpdateArticleStatus(c *gin.Context) {
 	if !bindJSON(c, &req) {
 		return
 	}
+	// 状态只允许草稿(0)/已发布(1)，拒绝任意整数避免写入非法状态值
+	if req.Status != model.ArticleStatusDraft && req.Status != model.ArticleStatusPublished {
+		response.BadRequest(c, "invalid status")
+		return
+	}
 	var item model.Article
 	if err := database.DB.First(&item, id).Error; err != nil {
 		response.NotFound(c, "article not found")
