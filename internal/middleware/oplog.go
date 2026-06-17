@@ -60,7 +60,7 @@ func AdminOperationLog() gin.HandlerFunc {
 		log := model.AdminOperationLog{
 			AdminID:    id,
 			Action:     c.Request.Method + " " + c.FullPath(),
-			TargetType: resourceFromPath(c.FullPath()),
+			TargetType: model.AdminOpLogTargetTypeFromPath(c.FullPath()),
 			TargetID:   uint(targetID),
 		}
 		if remark, ok := c.Get(ctxOpLogRemark); ok {
@@ -70,17 +70,4 @@ func AdminOperationLog() gin.HandlerFunc {
 		}
 		database.DB.Create(&log)
 	}
-}
-
-// resourceFromPath 取 /admin/api/v1/<resource>... 中的 resource 段作为审计目标类型。
-func resourceFromPath(fullPath string) string {
-	const prefix = "/admin/api/v1/"
-	if !strings.HasPrefix(fullPath, prefix) {
-		return ""
-	}
-	rest := strings.TrimPrefix(fullPath, prefix)
-	if idx := strings.IndexByte(rest, '/'); idx >= 0 {
-		return rest[:idx]
-	}
-	return rest
 }

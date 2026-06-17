@@ -1,7 +1,51 @@
 // 【后台】管理员、审计与系统配置表（一期）。
 package model
 
-import "course_server/internal/pkg/jsontime"
+import (
+	"strings"
+
+	"course_server/internal/pkg/jsontime"
+)
+
+// 后台操作审计目标类型（与 Admin 前端筛选项一致；article/essay/download_file 复用 models.go 常量）。
+const (
+	AdminTargetTypeTag             = "tag"
+	AdminTargetTypeTaxonomyUnit    = "taxonomy_unit"
+	AdminTargetTypeHomeBlock       = "home_block"
+	AdminTargetTypeAdSlot          = "ad_slot"
+	AdminTargetTypeOfficialAccount = "official_account"
+	AdminTargetTypeUpload          = "upload"
+)
+
+// adminPathToTargetType 将 /admin/api/v1/<resource> 首段映射为标准 targetType。
+var adminPathToTargetType = map[string]string{
+	"articles":                 TargetTypeArticle,
+	"essay-examples":           TargetTypeEssay,
+	"download-files":           TargetTypeDownloadFile,
+	"tags":                     AdminTargetTypeTag,
+	"taxonomy-units":           AdminTargetTypeTaxonomyUnit,
+	"home-blocks":              AdminTargetTypeHomeBlock,
+	"ad-slots":                 AdminTargetTypeAdSlot,
+	"official-account-configs": AdminTargetTypeOfficialAccount,
+	"upload":                   AdminTargetTypeUpload,
+}
+
+// AdminOpLogTargetTypeFromPath 从 Gin FullPath 解析并映射为标准审计目标类型。
+func AdminOpLogTargetTypeFromPath(fullPath string) string {
+	const prefix = "/admin/api/v1/"
+	if !strings.HasPrefix(fullPath, prefix) {
+		return ""
+	}
+	rest := strings.TrimPrefix(fullPath, prefix)
+	resource := rest
+	if idx := strings.IndexByte(rest, '/'); idx >= 0 {
+		resource = rest[:idx]
+	}
+	if t, ok := adminPathToTargetType[resource]; ok {
+		return t
+	}
+	return resource
+}
 
 // Admin 管理员账号。
 type Admin struct {
