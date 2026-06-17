@@ -22,31 +22,46 @@ func UserAuth(cfg *config.Config) gin.HandlerFunc {
 	return auth(cfg, "user")
 }
 
+// OptionalUserAuth 可选小程序 JWT：有合法 Bearer 时注入 auth_id，无 token 或无效 token 仍放行。
+func OptionalUserAuth(cfg *config.Config) gin.HandlerFunc {
+	return optionalAuth(cfg, "user")
+}
+
 func auth(cfg *config.Config, tokenType string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 提取 Authorization Header 中的 Bearer Token
 		tokenString := bearerToken(c.GetHeader("Authorization"))
 		if tokenString == "" {
 			response.Unauthorized(c, "missing authorization token")
 			c.Abort()
 			return
 		}
-		// 解析 JWT
 		claims, err := jwtutil.Parse(cfg.JWT.Secret, tokenString, tokenType)
 		if err != nil {
 			response.Unauthorized(c, "invalid authorization token")
 			c.Abort()
 			return
 		}
-		// 存储用户ID
-		c.Set("auth_id", claims.ID)
-		// 存储用户名
-		c.Set("auth_subject", claims.Subject)
-		// 存储用户角色
-		c.Set("auth_role", claims.Role)
-		// 继续处理请求
+		setAuthContext(c, claims)
 		c.Next()
 	}
+}
+
+func optionalAuth(cfg *config.Config, tokenType string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := bearerToken(c.GetHeader("Authorization"))
+		if tokenString != "" {
+			if claims, err := jwtutil.Parse(cfg.JWT.Secret, tokenString, tokenType); err == nil {
+				setAuthContext(c, claims)
+			}
+		}
+		c.Next()
+	}
+}
+
+func setAuthContext(c *gin.Context, claims *jwtutil.Claims) {
+	c.Set("auth_id", claims.ID)
+	c.Set("auth_subject", claims.Subject)
+	c.Set("auth_role", claims.Role)
 }
 
 // bearerToken 从 Authorization 提取 JWT，兼容 Bearer <token> 与裸 token 两种写法。

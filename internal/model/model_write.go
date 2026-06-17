@@ -212,7 +212,7 @@ func ValidateFavoriteTargetType(targetType string) error {
 	}
 }
 
-// CheckFavoriteTargetExists 校验收藏目标存在且对小程序可见（已发布文章 / 启用范文）。
+// CheckFavoriteTargetExists 校验 article/essay 目标存在且对小程序可见；收藏与埋点共用。
 func CheckFavoriteTargetExists(db *gorm.DB, targetType string, targetID uint) error {
 	if err := ValidateFavoriteTargetType(targetType); err != nil {
 		return err

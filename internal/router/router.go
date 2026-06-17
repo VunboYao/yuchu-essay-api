@@ -127,14 +127,28 @@ func Setup(cfg *config.Config) *gin.Engine {
 		api.GET("/search", h.Search)
 		// 广告位配置（仅返回启用项，可选 ?page= 过滤）
 		api.GET("/ad-slots", h.PublicAdSlots)
-		// 下载文件: 签名下载URL
-		api.GET("/download-files/:id/sign-url", h.SignDownloadURL)
-		// 激励视频看完后签发下载 unlockToken
-		api.POST("/download-files/:id/ad-unlock", h.UnlockDownloadAd)
-		api.POST("/track/view", h.TrackView)
-		api.POST("/track/share", h.TrackShare)
-		api.POST("/track/search", h.TrackSearch)
-		api.POST("/track/ad", h.TrackAd)
+
+		// 下载：可选 JWT，download_logs / ad_events 的 userId 仅服务端从 token 解析
+		download := api.Group("")
+		download.Use(middleware.OptionalUserAuth(cfg))
+		{
+			download.GET("/download-files/:id/sign-url", h.SignDownloadURL)
+			download.POST("/download-files/:id/ad-unlock", h.UnlockDownloadAd)
+		}
+
+		// 埋点：可选 JWT，userId 仅服务端从 token 解析（未登录为 0）
+		track := api.Group("")
+		track.Use(middleware.OptionalUserAuth(cfg))
+		{
+			// 浏览
+			track.POST("/track/view", h.TrackView)
+			// 分享
+			track.POST("/track/share", h.TrackShare)
+			// 搜索: 在独立搜索接口中实现，这里只记录日志
+			track.POST("/track/search", h.TrackSearch)
+			// 广告
+			track.POST("/track/ad", h.TrackAd)
+		}
 	}
 
 	// Day8–10：小程序需登录 API（Bearer user JWT）

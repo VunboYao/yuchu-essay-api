@@ -200,31 +200,38 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 
 // UnlockDownloadAd 激励视频看完后签发短时 unlockToken，供 sign-url 校验。
 func (s *Server) UnlockDownloadAd(c *gin.Context) {
+	// 1. 获取文件 ID
 	id, err := pathID(c)
 	if err != nil {
 		response.BadRequest(c, "invalid id")
 		return
 	}
+	// 2. 获取文件
 	var file model.DownloadFile
 	if err := database.DB.First(&file, id).Error; err != nil {
 		response.NotFound(c, "download file not found")
 		return
 	}
+	// 3. 校验文件是否免费
 	if !isPublicFreeDownload(file) {
 		response.Forbidden(c, "download file is not free")
 		return
 	}
+	// 4. 加载下载激励视频配置
 	gate, gateErr := loadDownloadGate()
 	if gateErr != nil {
 		response.ServerError(c, "failed to check download gate")
 		return
 	}
+	// 5. 校验下载激励视频配置是否启用
 	if !gate.IsDownloadGateActive() {
 		response.BadRequest(c, "download rewarded video gate is not enabled")
 		return
 	}
+	// 6. 获取用户ID
 	userID := currentAuthID(c)
 	pagePath := strings.TrimSpace(c.Query("pagePath"))
+	// 7. 记录激励视频完成事件
 	if err := database.DB.Create(&model.AdEvent{
 		UserID:     userID,
 		SlotKey:    gate.SlotKey,
@@ -236,6 +243,7 @@ func (s *Server) UnlockDownloadAd(c *gin.Context) {
 		response.ServerError(c, "failed to record ad unlock")
 		return
 	}
+	// 8. 签发解锁 token
 	token, expiresIn, err := adunlock.Sign(s.Config.JWT.Secret, s.Config.JWT.Issuer, file.ID, userID, gate.SlotKey)
 	if err != nil {
 		response.ServerError(c, "failed to issue unlock token")
