@@ -157,13 +157,13 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 | # | Method | Path | 说明 |
 |---|--------|------|------|
-| 1 | GET | `/essay-examples` | Query：`grade`、`articleId`、`status`、`keyword`、分页 |
+| 1 | GET | `/essay-examples` | Query：`grade`、`articleId`、`status`、`keyword`、`tagId`、分页；每项含 `tags` 数组 |
 | 2 | POST | `/essay-examples` | 创建 |
 | 3 | GET | `/essay-examples/:id` | 详情 |
 | 4 | PUT | `/essay-examples/:id` | 更新 |
 | 5 | DELETE | `/essay-examples/:id` | 删除 |
 
-**Body 关键字段**：`title`、`grade`、`body`、`comment`；可选 `articleId`、`tagIds`、`wordCount`
+**Body 关键字段**：`title`、`grade`、`body`、`comment`；可选 `articleId`、`tagIds`。`wordCount` 由服务端根据 `body` 自动统计（不计空白符），无需传入
 
 ---
 

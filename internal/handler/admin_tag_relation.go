@@ -113,6 +113,51 @@ func BuildArticleListItems(articles []model.Article, tagsByArticleID map[uint][]
 	return items
 }
 
+// EssayListItem 后台优秀作文列表项：范文字段 + 关联标签（平铺 tags 便于表格绑定）。
+type EssayListItem struct {
+	model.EssayExample
+	Tags []model.Tag `json:"tags"`
+}
+
+// essayTagRow 批量查询 essay_example_tags JOIN tags 时的扫描行。
+type essayTagRow struct {
+	EssayID uint `gorm:"column:essay_id"`
+	model.Tag
+}
+
+// essayTagsByEssayIDs 批量加载多篇优秀作文的标签，按 sort_order DESC, id DESC。
+func essayTagsByEssayIDs(essayIDs []uint) map[uint][]model.Tag {
+	result := make(map[uint][]model.Tag, len(essayIDs))
+	if len(essayIDs) == 0 {
+		return result
+	}
+	var rows []essayTagRow
+	database.DB.Table("essay_example_tags").
+		Select("essay_example_tags.essay_id, tags.*").
+		Joins("JOIN tags ON tags.id = essay_example_tags.tag_id").
+		Where("essay_example_tags.essay_id IN ?", essayIDs).
+		Order("tags.sort_order DESC, tags.id DESC").
+		Scan(&rows)
+	for _, row := range rows {
+		tag := row.Tag
+		result[row.EssayID] = append(result[row.EssayID], tag)
+	}
+	return result
+}
+
+// BuildEssayListItems 将优秀作文列表与标签映射组装为列表响应项。
+func BuildEssayListItems(essays []model.EssayExample, tagsByEssayID map[uint][]model.Tag) []EssayListItem {
+	items := make([]EssayListItem, 0, len(essays))
+	for _, essay := range essays {
+		tags := tagsByEssayID[essay.ID]
+		if tags == nil {
+			tags = []model.Tag{}
+		}
+		items = append(items, EssayListItem{EssayExample: essay, Tags: tags})
+	}
+	return items
+}
+
 // articleTags 关联表 join tags，按排序返回标签实体。
 func (s *Server) articleTags(articleID uint) []model.Tag {
 	var tags []model.Tag

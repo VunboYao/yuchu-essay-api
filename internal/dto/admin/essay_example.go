@@ -4,6 +4,7 @@ package admin
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"course_server/internal/dto"
 	"course_server/internal/model"
@@ -14,7 +15,6 @@ type EssayExampleWriteRequest struct {
 	ArticleID *uint  `json:"articleId"`
 	Title     string `json:"title" binding:"required"`
 	Grade     int    `json:"grade" binding:"required"`
-	WordCount int    `json:"wordCount"`
 	Body      string `json:"body" binding:"required"`
 	Comment   string `json:"comment" binding:"required"`
 	SortOrder int    `json:"sortOrder"`
@@ -34,6 +34,17 @@ func resolveOptionalArticleID(ptr *uint) *uint {
 		return nil
 	}
 	return ptr
+}
+
+// countEssayWordCount 按正文字符统计字数（不计空白符，与中文「字数」习惯一致）。
+func countEssayWordCount(body string) int {
+	n := 0
+	for _, r := range body {
+		if !unicode.IsSpace(r) {
+			n++
+		}
+	}
+	return n
 }
 
 func (r EssayExampleWriteRequest) normalize() (model.EssayExample, error) {
@@ -56,7 +67,7 @@ func (r EssayExampleWriteRequest) normalize() (model.EssayExample, error) {
 		ArticleID: resolveOptionalArticleID(r.ArticleID),
 		Title:     title,
 		Grade:     r.Grade,
-		WordCount: r.WordCount,
+		WordCount: countEssayWordCount(body),
 		Body:      body,
 		Comment:   comment,
 		SortOrder: r.SortOrder,

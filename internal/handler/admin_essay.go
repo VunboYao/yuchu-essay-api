@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListEssayExamples 列表查询
+// ListEssayExamples 列表查询（含每行 tags；支持 tagId 单标签筛选）。
 func (s *Server) ListEssayExamples(c *gin.Context) {
 	// 分页参数
 	page, pageSize := pageParams(c)
@@ -27,6 +27,12 @@ func (s *Server) ListEssayExamples(c *gin.Context) {
 	if status := c.Query("status"); status != "" {
 		db = db.Where("status = ?", status)
 	}
+	if tagID := c.Query("tagId"); tagID != "" {
+		db = db.Where(
+			"essay_examples.id IN (SELECT essay_id FROM essay_example_tags WHERE tag_id = ?)",
+			tagID,
+		)
+	}
 	if keyword := c.Query("keyword"); keyword != "" {
 		db = db.Where("title LIKE ? OR body LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	}
@@ -37,7 +43,12 @@ func (s *Server) ListEssayExamples(c *gin.Context) {
 		response.ServerError(c, "failed to list essay examples")
 		return
 	}
-	response.Page(c, list, total, page, pageSize)
+	essayIDs := make([]uint, 0, len(list))
+	for _, item := range list {
+		essayIDs = append(essayIDs, item.ID)
+	}
+	items := BuildEssayListItems(list, essayTagsByEssayIDs(essayIDs))
+	response.Page(c, items, total, page, pageSize)
 }
 
 // GetEssayExample 获取优秀作文详情（含关联标签）。
