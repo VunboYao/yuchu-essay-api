@@ -1,0 +1,988 @@
+{
+  "info": {
+    "name": "Essay MVP API",
+    "description": "内容型作文小程序 MVP 一期后端接口（57 端点）。导入后请先执行 Admin Login 与 Wx Login。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 健康检查",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Admin 认证",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/auth/login",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('code is 0', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(0);",
+                  "    if (json.data && json.data.token) {",
+                  "        pm.environment.set('adminToken', json.data.token);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Admin 统计",
+      "item": [
+        {
+          "name": "Stats Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/stats/overview",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Stats Hot Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/stats/hot-articles",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Stats Hot Searches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/stats/hot-searches",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Stats Hot Downloads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/stats/hot-downloads",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Stats Ad Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/stats/ad-events",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "04 Admin 操作日志",
+      "item": [
+        {
+          "name": "List Operation Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/operation-logs?page=1&pageSize=20",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "05 Admin 分类单元",
+      "item": [
+        {
+          "name": "List Taxonomy Units",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/taxonomy-units",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Create Taxonomy Unit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/taxonomy-units",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"textbookVersion\": \"统编版\",\n  \"grade\": 3,\n  \"semester\": \"上册\",\n  \"unit\": 1,\n  \"unitTitle\": \"第一单元\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Taxonomy Unit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/taxonomy-units/1",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"textbookVersion\": \"统编版\",\n  \"grade\": 3,\n  \"semester\": \"上册\",\n  \"unit\": 1,\n  \"unitTitle\": \"第一单元（更新）\",\n  \"status\": 1\n}"
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "06 Admin 标签",
+      "item": [
+        {
+          "name": "List Tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/tags",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Create Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/tags",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"免费\",\n  \"sortOrder\": 0,\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Tag",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/tags/1",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"免费\",\n  \"sortOrder\": 1,\n  \"status\": 1\n}"
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "07 Admin 文章",
+      "item": [
+        {
+          "name": "List Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/articles",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Create Article",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/articles",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman测试专题\",\n  \"slug\": \"postman-test-article\",\n  \"grade\": 3,\n  \"semester\": \"上册\",\n  \"unit\": 1,\n  \"essayTopic\": \"我的家乡\",\n  \"contentType\": \"记叙文\",\n  \"summary\": \"测试摘要\",\n  \"coverImg\": \"https://oss.example.com/cover.jpg\",\n  \"bodyImages\": [\n    \"https://oss.example.com/body1.jpg\"\n  ],\n  \"status\": 1,\n  \"tagIds\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('code is 0', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(0);",
+                  "    if (json.data && json.data.id) pm.environment.set('articleId', json.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Article",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/articles/{{articleId}}",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Update Article",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/articles/{{articleId}}",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman测试专题\",\n  \"slug\": \"postman-test-article\",\n  \"grade\": 3,\n  \"semester\": \"上册\",\n  \"unit\": 1,\n  \"essayTopic\": \"我的家乡\",\n  \"contentType\": \"记叙文\",\n  \"summary\": \"测试摘要\",\n  \"coverImg\": \"https://oss.example.com/cover.jpg\",\n  \"bodyImages\": [\n    \"https://oss.example.com/body1.jpg\"\n  ],\n  \"status\": 1,\n  \"tagIds\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Article Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/articles/{{articleId}}/status",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 1\n}"
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "08 Admin 优秀作文",
+      "item": [
+        {
+          "name": "List Essay Examples",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/essay-examples",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Create Essay Example",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/essay-examples",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"测试范文\",\n  \"grade\": 3,\n  \"body\": \"正文内容\",\n  \"comment\": \"点评\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Essay Example",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/essay-examples/1",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Update Essay Example",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/essay-examples/1",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"测试范文\",\n  \"grade\": 3,\n  \"body\": \"正文内容更新\",\n  \"comment\": \"点评\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Essay Example",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/essay-examples/1",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "09 Admin 下载资料",
+      "item": [
+        {
+          "name": "List Download Files",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/download-files",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Create Download File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/download-files",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ownerType\": \"article\",\n  \"ownerId\": \"{{articleId}}\",\n  \"fileName\": \"测试资料.pdf\",\n  \"tags\": \"免费,测试\",\n  \"accessType\": \"free\",\n  \"fileType\": \"pdf\",\n  \"fileUrl\": \"https://oss.example.com/test.pdf\",\n  \"status\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('code is 0', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(0);",
+                  "    if (json.data && json.data.id) pm.environment.set('downloadFileId', json.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Download File",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/download-files/{{downloadFileId}}",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ownerType\": \"article\",\n  \"ownerId\": \"{{articleId}}\",\n  \"fileName\": \"测试资料.pdf\",\n  \"tags\": \"免费,测试\",\n  \"accessType\": \"free\",\n  \"fileType\": \"pdf\",\n  \"fileUrl\": \"https://oss.example.com/test.pdf\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Download File",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/download-files/{{downloadFileId}}?confirm=true",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "10 Admin 运营配置",
+      "item": [
+        {
+          "name": "List Home Blocks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/home-blocks",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Create Home Block",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/home-blocks",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"优秀作文\",\n  \"icon\": \"https://oss.example.com/icon.png\",\n  \"navType\": \"navigateTo\",\n  \"path\": \"/pages/essays/index\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Home Block",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/home-blocks/1",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"优秀作文\",\n  \"icon\": \"https://oss.example.com/icon.png\",\n  \"navType\": \"navigateTo\",\n  \"path\": \"/pages/essays/index\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "List Ad Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/ad-slots",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Upsert Ad Slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/ad-slots",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotKey\": \"download_rewarded_video\",\n  \"slotName\": \"下载激励视频\",\n  \"page\": \"download\",\n  \"adType\": \"rewarded_video\",\n  \"adUnitId\": \"adunit-test\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "List Official Account Configs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/official-account-configs",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Upsert Official Account Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/official-account-configs",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scene\": \"article_detail\",\n  \"title\": \"关注公众号\",\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload STS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/upload/sts",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "11 小程序 登录",
+      "item": [
+        {
+          "name": "Wx Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/wx/login",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"postman_test\",\n  \"sourceScene\": \"postman\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('code is 0', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(0);",
+                  "    if (json.data && json.data.token) {",
+                  "        pm.environment.set('userToken', json.data.token);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12 小程序 公开内容",
+      "item": [
+        {
+          "name": "Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/home",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/categories",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Public Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/articles",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Public Article Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/articles/{{articleId}}",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Public Essays",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/essays",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Public Essay Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/essays/1",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/search?keyword=测试",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Public Ad Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/ad-slots?page=home",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 小程序 下载",
+      "item": [
+        {
+          "name": "Sign Download URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/download-files/{{downloadFileId}}/sign-url",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Ad Unlock",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/download-files/{{downloadFileId}}/ad-unlock",
+            "description": "详见 course_server/docs/api-reference.md"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('code is 0', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(0);",
+                  "    if (json.data && json.data.unlockToken) pm.environment.set('unlockToken', json.data.unlockToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign URL With Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/download-files/{{downloadFileId}}/sign-url?unlockToken={{unlockToken}}",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 小程序 埋点",
+      "item": [
+        {
+          "name": "Track View",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/track/view",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"article\",\n  \"targetId\": \"{{articleId}}\",\n  \"pagePath\": \"/pages/article/detail\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Track Share",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/track/share",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"article\",\n  \"targetId\": \"{{articleId}}\",\n  \"shareChannel\": \"wechat\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Track Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/track/search",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keyword\": \"测试\",\n  \"resultCount\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Track Ad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/track/ad",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotKey\": \"home_feed_mid\",\n  \"eventType\": \"expose\",\n  \"pagePath\": \"/pages/home/index\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 小程序 用户中心",
+      "item": [
+        {
+          "name": "Mine",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/mine",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "List Favorites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/favorites",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Add Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/favorites",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"article\",\n  \"targetId\": \"{{articleId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Remove Favorite",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/favorites?targetType=article&targetId={{articleId}}",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/history",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Downloads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/downloads",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{userToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}

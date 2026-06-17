@@ -136,6 +136,13 @@ type DownloadFile struct {
 	UpdatedAt     jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
+// IsPublicFreeDownload 一期 MVP 免费下载底线：启用 + access_type=free + tags 含「免费」。
+func IsPublicFreeDownload(file DownloadFile) bool {
+	return file.Status == StatusEnabled &&
+		file.AccessType == AccessTypeFree &&
+		strings.Contains(file.Tags, "免费")
+}
+
 // --- 运营配置（后台可配，小程序读取）---
 
 // PRD 一期固定广告位 slotKey（prd/001 §7、prd/002 §6.2）。

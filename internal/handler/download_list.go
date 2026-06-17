@@ -145,7 +145,7 @@ func BuildDownloadListItems(
 			item.Available = false
 			item.Target = nil
 		} else {
-			item.Available = isPublicFreeDownload(file)
+			item.Available = model.IsPublicFreeDownload(file)
 			summary := DownloadFileSummary{
 				FileName: file.FileName,
 				FileType: file.FileType,

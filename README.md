@@ -13,6 +13,7 @@ Agent 核心规则见 [AGENTS.md](./AGENTS.md)（MVP 边界、开发流程、注
 - 文章、正文图片、优秀作文、分类、标签、下载资料基础 API
 - 小程序首页、分类、文章、优秀作文、搜索、收藏、历史、下载记录接口骨架
 - 免费下载权限校验：`access_type=free` 且标签包含「免费」
+- **Day12**：接口参考文档、Postman 集合、全量自测清单、下载权限边界测试（见 `docs/`）
 
 ## 启动
 
@@ -380,6 +381,10 @@ database.DB.Create(&tag)
 | 文档 | 说明 |
 |---|---|
 | [AGENTS.md](./AGENTS.md) | Agent 核心规则（边界、开发流程、注释） |
+| [docs/api-reference.md](./docs/api-reference.md) | **全量 API 参考**（57 端点） |
+| [docs/api-self-test-checklist.md](./docs/api-self-test-checklist.md) | 后端全量自测勾选表 |
+| [docs/download-permission-boundary.md](./docs/download-permission-boundary.md) | 下载权限边界矩阵与手工步骤 |
+| [docs/postman/](./docs/postman/) | Postman Collection v2.1 + 本地环境 |
 | [prd/001-产品整体结构.md](../prd/001-产品整体结构.md) | 产品整体结构 |
 | [prd/003-技术文档介绍.md](../prd/003-技术文档介绍.md) | 技术方案与接口规范 |
 | [prd/004](../prd/004-开发计划-第一阶段：后端基础与数据模型（Day1-7）.md) ~ [005](../prd/005-开发计划-第二阶段：后端业务接口与统计（Day8-12）.md) | 后端开发计划 |

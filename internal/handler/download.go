@@ -144,7 +144,7 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 		response.NotFound(c, "download file not found")
 		return
 	}
-	if !isPublicFreeDownload(file) {
+	if !model.IsPublicFreeDownload(file) {
 		response.Forbidden(c, "download file is not free")
 		return
 	}
@@ -213,7 +213,7 @@ func (s *Server) UnlockDownloadAd(c *gin.Context) {
 		return
 	}
 	// 3. 校验文件是否免费
-	if !isPublicFreeDownload(file) {
+	if !model.IsPublicFreeDownload(file) {
 		response.Forbidden(c, "download file is not free")
 		return
 	}
@@ -262,14 +262,6 @@ func loadDownloadGate() (model.AdSlot, error) {
 		return model.AdSlot{}, nil
 	}
 	return slot, err
-}
-
-// isPublicFreeDownload 一期 MVP 免费下载底线，purchase_required/member_only/internal 均不满足。
-func isPublicFreeDownload(file model.DownloadFile) bool {
-	// 状态为启用、访问权限为免费、标签包含免费
-	return file.Status == model.StatusEnabled &&
-		file.AccessType == model.AccessTypeFree &&
-		strings.Contains(file.Tags, "免费")
 }
 
 // pseudoSignedURL 开发期伪签名（拼接 expires）；生产应替换为 OSS 预签名 URL。
