@@ -121,15 +121,21 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 ---
 
-### 3.5 标签（3）
+### 3.5 标签（4）
 
 | # | Method | Path | 说明 |
 |---|--------|------|------|
-| 1 | GET | `/tags` | 列表；Query：`keyword`、分页 |
+| 1 | GET | `/tags` | 列表；Query：`keyword`、`status`、分页 |
 | 2 | POST | `/tags` | 创建 |
-| 3 | PUT | `/tags/:id` | 更新 |
+| 3 | PUT | `/tags/:id` | 更新；启用→禁用时须无文章/作文关联 |
+| 4 | DELETE | `/tags/:id` | 删除；须已禁用且无文章/作文关联 |
 
 **POST/PUT Body**：`{ "name": "免费", "sortOrder": 0, "status": 1 }`
+
+**禁用/删除约束**：
+
+- 启用→禁用：若 `article_tags` 或 `essay_example_tags` 仍引用该标签，返回 400
+- 物理删除：仅 `status=0` 且无上述关联时可删
 
 ---
 
@@ -137,7 +143,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 | # | Method | Path | 说明 |
 |---|--------|------|------|
-| 1 | GET | `/articles` | 列表；Query：`grade`、`semester`、`unit`、`contentType`、`status`、`keyword`、分页；省略 `bodyImages` |
+| 1 | GET | `/articles` | 列表；Query：`grade`、`semester`、`unit`、`contentType`、`status`、`keyword`、`tagId`、分页；省略 `bodyImages`；每项含 `tags` 数组 |
 | 2 | POST | `/articles` | 创建（含 `bodyImages`、`tagIds`） |
 | 3 | GET | `/articles/:id` | 详情（含标签、正文图片） |
 | 4 | PUT | `/articles/:id` | 更新 |

@@ -128,6 +128,10 @@ func (s *Server) ListTags(c *gin.Context) {
 	if keyword := c.Query("keyword"); keyword != "" {
 		db = db.Where("name LIKE ?", "%"+keyword+"%")
 	}
+	// status 筛选：选用标签时传 1 仅返回启用项
+	if status := c.Query("status"); status != "" {
+		db = db.Where("status = ?", status)
+	}
 	// 统计总数
 	var total int64
 	db.Count(&total)
@@ -196,6 +200,13 @@ func (s *Server) UpdateTag(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// 启用→禁用：须无文章/作文关联，避免内容页标签名丢失
+	if item.Status == model.StatusEnabled && tag.Status == model.StatusDisabled {
+		if err := model.CheckTagDisableAllowed(database.DB, item.ID); err != nil {
+			response.BadRequest(c, err.Error())
+			return
+		}
+	}
 	// 更新数据库
 	if err := UpdateAndReload(database.DB, &item, tag.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update tag")
@@ -203,4 +214,28 @@ func (s *Server) UpdateTag(c *gin.Context) {
 	}
 	middleware.SetOpLogRemark(c, "更新标签："+item.Name)
 	response.Success(c, item)
+}
+
+// DeleteTag 物理删除标签；须已禁用且无文章/作文关联。
+func (s *Server) DeleteTag(c *gin.Context) {
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	var item model.Tag
+	if err := database.DB.First(&item, id).Error; err != nil {
+		response.NotFound(c, "tag not found")
+		return
+	}
+	if err := model.CheckTagDeletable(database.DB, item); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := database.DB.Delete(&item).Error; err != nil {
+		response.ServerError(c, "failed to delete tag")
+		return
+	}
+	middleware.SetOpLogRemark(c, "删除标签："+item.Name)
+	response.Success(c, gin.H{"id": id})
 }

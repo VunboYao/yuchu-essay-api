@@ -68,6 +68,51 @@ func replaceEssayTags(tx *gorm.DB, essayID uint, tagIDs []uint) error {
 	return tx.Create(&rows).Error
 }
 
+// ArticleListItem 后台文章列表项：文章字段 + 关联标签（平铺 tags 便于表格绑定）。
+type ArticleListItem struct {
+	model.Article
+	Tags []model.Tag `json:"tags"`
+}
+
+// articleTagRow 批量查询 article_tags JOIN tags 时的扫描行。
+type articleTagRow struct {
+	ArticleID uint `gorm:"column:article_id"`
+	model.Tag
+}
+
+// articleTagsByArticleIDs 批量加载多篇文章的标签，按 sort_order DESC, id DESC。
+func articleTagsByArticleIDs(articleIDs []uint) map[uint][]model.Tag {
+	result := make(map[uint][]model.Tag, len(articleIDs))
+	if len(articleIDs) == 0 {
+		return result
+	}
+	var rows []articleTagRow
+	database.DB.Table("article_tags").
+		Select("article_tags.article_id, tags.*").
+		Joins("JOIN tags ON tags.id = article_tags.tag_id").
+		Where("article_tags.article_id IN ?", articleIDs).
+		Order("tags.sort_order DESC, tags.id DESC").
+		Scan(&rows)
+	for _, row := range rows {
+		tag := row.Tag
+		result[row.ArticleID] = append(result[row.ArticleID], tag)
+	}
+	return result
+}
+
+// BuildArticleListItems 将文章列表与标签映射组装为列表响应项。
+func BuildArticleListItems(articles []model.Article, tagsByArticleID map[uint][]model.Tag) []ArticleListItem {
+	items := make([]ArticleListItem, 0, len(articles))
+	for _, article := range articles {
+		tags := tagsByArticleID[article.ID]
+		if tags == nil {
+			tags = []model.Tag{}
+		}
+		items = append(items, ArticleListItem{Article: article, Tags: tags})
+	}
+	return items
+}
+
 // articleTags 关联表 join tags，按排序返回标签实体。
 func (s *Server) articleTags(articleID uint) []model.Tag {
 	var tags []model.Tag

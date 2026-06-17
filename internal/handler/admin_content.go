@@ -15,12 +15,19 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListArticles 列表
+// ListArticles 列表（含每行 tags；支持 tagId 单标签筛选，仅后台列表生效）。
 func (s *Server) ListArticles(c *gin.Context) {
 	// 分页参数
 	page, pageSize := pageParams(c)
 	// 筛选参数
 	db := articleFilters(database.DB.Model(&model.Article{}), c)
+	// 按标签筛选：仅后台列表，不放入 articleFilters 以免影响公开接口
+	if tagID := c.Query("tagId"); tagID != "" {
+		db = db.Where(
+			"articles.id IN (SELECT article_id FROM article_tags WHERE tag_id = ?)",
+			tagID,
+		)
+	}
 	var total int64
 	// 总条数
 	db.Count(&total)
@@ -30,7 +37,12 @@ func (s *Server) ListArticles(c *gin.Context) {
 		response.ServerError(c, "failed to list articles")
 		return
 	}
-	response.Page(c, list, total, page, pageSize)
+	articleIDs := make([]uint, 0, len(list))
+	for _, item := range list {
+		articleIDs = append(articleIDs, item.ID)
+	}
+	items := BuildArticleListItems(list, articleTagsByArticleIDs(articleIDs))
+	response.Page(c, items, total, page, pageSize)
 }
 
 // CreateArticle 创建

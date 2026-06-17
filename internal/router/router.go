@@ -56,6 +56,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.POST("/tags", h.CreateTag)
 		// 标签: 更新
 		protectedAdmin.PUT("/tags/:id", h.UpdateTag)
+		// 标签: 删除（须已禁用且无内容关联）
+		protectedAdmin.DELETE("/tags/:id", h.DeleteTag)
 
 		// 文章: 列表查询
 		protectedAdmin.GET("/articles", h.ListArticles)

@@ -43,6 +43,40 @@ func CheckTagNameDuplicate(db *gorm.DB, name string, excludeID uint) error {
 	return nil
 }
 
+// CountTagUsage 统计标签被文章与优秀作文引用的次数。
+func CountTagUsage(db *gorm.DB, tagID uint) (articleCount, essayCount int64, err error) {
+	if err = db.Model(&ArticleTag{}).Where("tag_id = ?", tagID).Count(&articleCount).Error; err != nil {
+		return
+	}
+	err = db.Model(&EssayExampleTag{}).Where("tag_id = ?", tagID).Count(&essayCount).Error
+	return
+}
+
+// tagInUseError 标签仍被内容引用时的中文错误提示。
+func tagInUseError(articleCount, essayCount int64) error {
+	if articleCount == 0 && essayCount == 0 {
+		return nil
+	}
+	return fmt.Errorf("该标签仍被 %d 篇文章、%d 篇优秀作文使用，请先在对应内容中取消关联后再操作", articleCount, essayCount)
+}
+
+// CheckTagDisableAllowed 启用→禁用前校验：无内容关联才允许禁用。
+func CheckTagDisableAllowed(db *gorm.DB, tagID uint) error {
+	articleCount, essayCount, err := CountTagUsage(db, tagID)
+	if err != nil {
+		return err
+	}
+	return tagInUseError(articleCount, essayCount)
+}
+
+// CheckTagDeletable 物理删除前校验：须已禁用且无内容关联。
+func CheckTagDeletable(db *gorm.DB, tag Tag) error {
+	if tag.Status != StatusDisabled {
+		return fmt.Errorf("仅已禁用的标签可删除，请先将标签禁用")
+	}
+	return CheckTagDisableAllowed(db, tag.ID)
+}
+
 // --- TaxonomyUnit ---
 
 // UpdateMap 返回 GORM Updates 用的字段 map（支持零值写入）。
