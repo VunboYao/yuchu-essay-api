@@ -57,6 +57,9 @@ func (r ArticleWriteRequest) normalize() (model.Article, error) {
 	if slug == "" {
 		return model.Article{}, fmt.Errorf("slug is required")
 	}
+	if !model.ValidArticleSlug(slug) {
+		return model.Article{}, fmt.Errorf("invalid slug format")
+	}
 	version := strings.TrimSpace(r.TextbookVersion)
 	// 校验必填数值字段：年级和单元须为正整数
 	if r.Grade <= 0 {

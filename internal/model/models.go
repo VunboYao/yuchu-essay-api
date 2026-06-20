@@ -9,6 +9,11 @@
 // HTTP 入参 DTO 见 internal/dto/admin/；字段 gorm:"comment:..." 同步列注释；表级 COMMENT 见 db_comments.go。
 package model
 
+import "regexp"
+
+// articleSlugPattern 文章 URL 别名：小写字母、数字、连字符，如 grade-3-unit-1。
+var articleSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
 // 通用与内容状态、下载权限常量（禁止在 handler 中散落魔法值）。
 const (
 	// 通用状态常量: 0禁用 1启用
@@ -33,8 +38,8 @@ const (
 
 	// 收藏/分享/浏览等行为的目标类型：文章 作文 下载资料
 	TargetTypeArticle      = "article"
-	TargetTypeEssay         = "essay"
-	TargetTypeDownloadFile  = "download_file"
+	TargetTypeEssay        = "essay"
+	TargetTypeDownloadFile = "download_file"
 
 	// 最大正文图片数量
 	MaxBodyImages = 20
@@ -65,4 +70,9 @@ func ValidViewAccessType(t string) bool {
 	default:
 		return false
 	}
+}
+
+// ValidArticleSlug 校验文章 URL 别名格式（小写字母、数字、连字符，不能以 / 开头）。
+func ValidArticleSlug(slug string) bool {
+	return articleSlugPattern.MatchString(slug)
 }
