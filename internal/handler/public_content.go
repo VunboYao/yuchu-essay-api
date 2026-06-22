@@ -104,11 +104,37 @@ func (s *Server) PublicArticleDetail(c *gin.Context) {
 		"article", item.ID, model.StatusEnabled, model.AccessTypeFree, "%免费%").
 		Order("sort_order DESC, id DESC").Find(&downloads)
 
+	relatedArticles := listRelatedArticles(item, relatedArticleLimit)
+
 	response.Success(c, gin.H{
-		"article":       item,
-		"freeDownloads": downloads,
-		"downloadGate":  buildDownloadGateResponse(),
+		"article":         item,
+		"relatedArticles": relatedArticles,
+		"freeDownloads":   downloads,
+		"downloadGate":    buildDownloadGateResponse(),
 	})
+}
+
+const relatedArticleLimit = 10
+
+// RelatedArticleMatches 相关推荐须与当前文章同年级、同册次、同单元。
+func RelatedArticleMatches(baseGrade int, baseSemester string, baseUnit int, grade int, semester string, unit int) bool {
+	return grade == baseGrade && semester == baseSemester && unit == baseUnit
+}
+
+// listRelatedArticles 返回同年级/同册次/同单元的其他已发布文章，排除当前篇。
+func listRelatedArticles(article model.Article, limit int) []model.Article {
+	if limit <= 0 {
+		limit = relatedArticleLimit
+	}
+	var list []model.Article
+	database.DB.Model(&model.Article{}).
+		Where("status = ? AND id <> ? AND grade = ? AND semester = ? AND unit = ?",
+			model.ArticleStatusPublished, article.ID, article.Grade, article.Semester, article.Unit).
+		Omit("body_images").
+		Order("sort_order DESC, id DESC").
+		Limit(limit).
+		Find(&list)
+	return list
 }
 
 // buildDownloadGateResponse 聚合全局下载激励视频门槛，供文章详情资料区使用。
