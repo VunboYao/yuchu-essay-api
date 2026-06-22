@@ -316,6 +316,14 @@ func FindHomeBlockByID(db *gorm.DB, id uint) (HomeBlock, error) {
 	return block, err
 }
 
+// CheckHomeBlockDeletable 物理删除前校验：须已禁用（启用中不可删，须先禁用）。
+func CheckHomeBlockDeletable(block HomeBlock) error {
+	if block.Status != StatusDisabled {
+		return fmt.Errorf("仅已禁用的首页入口可删除，请先将入口禁用")
+	}
+	return nil
+}
+
 func (s AdSlot) UpdateMap() map[string]interface{} {
 	return map[string]interface{}{
 		"slot_key":   s.SlotKey,
@@ -333,6 +341,21 @@ func FindAdSlotByKey(db *gorm.DB, slotKey string) (AdSlot, error) {
 	var slot AdSlot
 	err := db.Where("slot_key = ?", slotKey).First(&slot).Error
 	return slot, err
+}
+
+// FindAdSlotByID 按 id 查找广告位；不存在时返回 gorm.ErrRecordNotFound。
+func FindAdSlotByID(db *gorm.DB, id uint) (AdSlot, error) {
+	var slot AdSlot
+	err := db.First(&slot, id).Error
+	return slot, err
+}
+
+// CheckAdSlotDeletable 物理删除前校验：须已禁用（启用中不可删，须先禁用）。
+func CheckAdSlotDeletable(slot AdSlot) error {
+	if slot.Status != StatusDisabled {
+		return fmt.Errorf("仅已禁用的广告位可删除，请先将广告位禁用")
+	}
+	return nil
 }
 
 // FindDownloadGateSlot 查询资料下载激励视频门槛配置（固定 slotKey）。
@@ -355,4 +378,19 @@ func FindOfficialAccountConfigByScene(db *gorm.DB, scene string) (OfficialAccoun
 	var cfg OfficialAccountConfig
 	err := db.Where("scene = ?", scene).First(&cfg).Error
 	return cfg, err
+}
+
+// FindOfficialAccountConfigByID 按 id 查找公众号导流配置；不存在时返回 gorm.ErrRecordNotFound。
+func FindOfficialAccountConfigByID(db *gorm.DB, id uint) (OfficialAccountConfig, error) {
+	var cfg OfficialAccountConfig
+	err := db.First(&cfg, id).Error
+	return cfg, err
+}
+
+// CheckOfficialAccountConfigDeletable 物理删除前校验：须已禁用（启用中不可删，须先禁用）。
+func CheckOfficialAccountConfigDeletable(cfg OfficialAccountConfig) error {
+	if cfg.Status != StatusDisabled {
+		return fmt.Errorf("仅已禁用的公众号导流配置可删除，请先将配置禁用")
+	}
+	return nil
 }

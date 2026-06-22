@@ -96,14 +96,20 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.POST("/home-blocks", h.CreateHomeBlock)
 		// 首页入口: 更新
 		protectedAdmin.PUT("/home-blocks/:id", h.UpdateHomeBlock)
+		// 首页入口: 删除（须已禁用）
+		protectedAdmin.DELETE("/home-blocks/:id", h.DeleteHomeBlock)
 		// 广告位: 列表查询
 		protectedAdmin.GET("/ad-slots", h.ListAdSlots)
 		// 广告位: 创建或更新
 		protectedAdmin.POST("/ad-slots", h.UpsertAdSlot)
+		// 广告位: 删除（须已禁用）
+		protectedAdmin.DELETE("/ad-slots/:id", h.DeleteAdSlot)
 		// 公众号配置: 列表查询
 		protectedAdmin.GET("/official-account-configs", h.ListOfficialAccountConfigs)
 		// 公众号配置: 创建或更新
 		protectedAdmin.POST("/official-account-configs", h.UpsertOfficialAccountConfig)
+		// 公众号配置: 删除（须已禁用）
+		protectedAdmin.DELETE("/official-account-configs/:id", h.DeleteOfficialAccountConfig)
 		// 上传STS凭证
 		protectedAdmin.POST("/upload/sts", h.UploadSTS)
 	}

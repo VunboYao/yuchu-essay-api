@@ -1,7 +1,7 @@
 # API 参考文档（内容型作文 MVP 一期）
 
 > 路由源码唯一入口：[`internal/router/router.go`](../internal/router/router.go)  
-> 通用约定详见 [`README.md`](../README.md)。本文档覆盖 **57** 个 HTTP 端点。
+> 通用约定详见 [`README.md`](../README.md)。本文档覆盖 **61** 个 HTTP 端点。
 
 ---
 
@@ -55,7 +55,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 ---
 
-## 三、后台 Admin API（35）
+## 三、后台 Admin API（39）
 
 ### 3.1 认证（1）
 
@@ -180,20 +180,29 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 ---
 
-### 3.9 运营配置（9）
+### 3.9 运营配置（11）
 
 | # | Method | Path | 说明 |
 |---|--------|------|------|
 | 1 | GET | `/home-blocks` | 首页入口列表 |
 | 2 | POST | `/home-blocks` | 创建首页入口 |
 | 3 | PUT | `/home-blocks/:id` | 更新首页入口 |
-| 4 | GET | `/ad-slots` | 广告位列表 |
-| 5 | POST | `/ad-slots` | 按 `slotKey` Upsert 广告位 |
-| 6 | GET | `/official-account-configs` | 公众号导流配置列表 |
-| 7 | POST | `/official-account-configs` | 按 `scene` Upsert 公众号配置 |
-| 8 | POST | `/upload/sts` | OSS STS 凭证（开发占位） |
+| 4 | DELETE | `/home-blocks/:id` | 删除首页入口；须已禁用 |
+| 5 | GET | `/ad-slots` | 广告位列表 |
+| 6 | POST | `/ad-slots` | 按 `slotKey` Upsert 广告位 |
+| 7 | DELETE | `/ad-slots/:id` | 删除广告位；须已禁用 |
+| 8 | GET | `/official-account-configs` | 公众号导流配置列表 |
+| 9 | POST | `/official-account-configs` | 按 `scene` Upsert 公众号配置 |
+| 10 | DELETE | `/official-account-configs/:id` | 删除公众号导流配置；须已禁用 |
+| 11 | POST | `/upload/sts` | OSS STS 凭证（开发占位） |
 
-**首页入口 Body**：`title`、`icon`、`navType`（`navigateTo`/`switchTab`/`redirectTo`/`reLaunch`）、`path`（须以 `/` 开头）
+**首页入口 Body**：`title`、`icon`、`navType`（`navigateTo`/`switchTab`/`redirectTo`/`reLaunch`）、`path`（须以 `/` 开头）；可选 `sortOrder`、`status`
+
+**首页入口 / 广告位 / 公众号导流删除约束**：
+
+- 物理删除：仅 `status=0`（已禁用）时可删；启用中返回 400
+- 首页入口：删除后不再出现在 `GET /api/v1/home` 的 `blocks` 中
+- 广告位：PRD 预置 `slotKey`（如 `home_feed_mid`）删除后，服务重启时 `SeedAdSlots` 会按缺失补回
 
 **广告位 Upsert Body**：`slotKey`、`slotName`、`page`、`position`、`adType`（`banner`/`rewarded_video`）、`adUnitId`、`sortOrder`、`status`
 
