@@ -36,6 +36,7 @@ func AutoMigrate() error {
 		&model.SearchLog{},
 		&model.ShareLog{},
 		&model.AdEvent{},
+		&model.Feedback{},
 	); err != nil {
 		return err
 	}

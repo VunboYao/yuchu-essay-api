@@ -384,6 +384,7 @@ database.DB.Create(&tag)
 | [docs/api-reference.md](./docs/api-reference.md) | **全量 API 参考**（57 端点） |
 | [docs/api-self-test-checklist.md](./docs/api-self-test-checklist.md) | 后端全量自测勾选表 |
 | [docs/download-permission-boundary.md](./docs/download-permission-boundary.md) | 下载权限边界矩阵与手工步骤 |
+| [docs/oss-upload-backlog.md](./docs/oss-upload-backlog.md) | **OSS 上传统一改造待办**（含小程序头像本地上传已知问题） |
 | [docs/postman/](./docs/postman/) | Postman Collection v2.1 + 本地环境 |
 | [prd/001-产品整体结构.md](../prd/001-产品整体结构.md) | 产品整体结构 |
 | [prd/003-技术文档介绍.md](../prd/003-技术文档介绍.md) | 技术方案与接口规范 |

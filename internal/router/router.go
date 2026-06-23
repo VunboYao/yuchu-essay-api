@@ -21,6 +21,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 	// Day1：健康检查
 	r.GET("/health", h.Health)
+	// 用户上传头像等静态资源（本地开发）
+	r.Static("/uploads", "uploads")
 
 	// Day3–7：后台管理 API（除 login 外均需 AdminAuth）
 	admin := r.Group("/admin/api/v1")
@@ -42,6 +44,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.GET("/stats/ad-events", h.StatsAdEvents)
 		// 操作日志
 		protectedAdmin.GET("/operation-logs", h.ListOperationLogs)
+		// 意见反馈
+		protectedAdmin.GET("/feedbacks", h.ListFeedbacks)
+		protectedAdmin.PUT("/feedbacks/:id/reply", h.ReplyFeedback)
 
 		// 教材分类单元: 查询
 		protectedAdmin.GET("/taxonomy-units", h.ListTaxonomyUnits)
@@ -135,6 +140,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 		api.GET("/search", h.Search)
 		// 广告位配置（仅返回启用项，可选 ?page= 过滤）
 		api.GET("/ad-slots", h.PublicAdSlots)
+		// 公众号导流配置（仅返回启用项，须传 ?scene=）
+		api.GET("/official-account-configs", h.PublicOfficialAccountConfig)
 
 		// 下载：可选 JWT，download_logs / ad_events 的 userId 仅服务端从 token 解析
 		download := api.Group("")
@@ -175,6 +182,13 @@ func Setup(cfg *config.Config) *gin.Engine {
 		user.GET("/history", h.History)
 		// 下载记录
 		user.GET("/downloads", h.Downloads)
+		// 用户资料
+		user.GET("/user/profile", h.GetUserProfile)
+		user.PUT("/user/profile", h.UpdateUserProfile)
+		user.POST("/user/avatar", h.UploadUserAvatar)
+		// 意见反馈
+		user.POST("/feedbacks", h.CreateFeedback)
+		user.GET("/feedbacks", h.ListUserFeedbacks)
 	}
 
 	return r

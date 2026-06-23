@@ -43,6 +43,7 @@ var tableCommentEntries = []struct {
 	{table: "search_logs", comment: TableScopeMini + "搜索关键词日志"},
 	{table: "share_logs", comment: TableScopeMini + "分享行为日志"},
 	{table: "ad_events", comment: TableScopeMini + "广告曝光/点击等行为日志"},
+	{table: "feedbacks", comment: TableScopeMini + "用户意见反馈"},
 }
 
 // ApplyTableComments 在 AutoMigrate 之后为各表写入 MySQL 表级 COMMENT（幂等，可重复执行）。

@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"errors"
 	"strings"
 
 	"course_server/internal/database"
@@ -55,6 +56,35 @@ func (s *Server) PublicAdSlots(c *gin.Context) {
 		return
 	}
 	response.Success(c, list)
+}
+
+// PublicOfficialAccountConfig 返回指定 scene 下启用中的公众号导流配置，供小程序展示关注引导。
+func (s *Server) PublicOfficialAccountConfig(c *gin.Context) {
+	scene := strings.TrimSpace(c.Query("scene"))
+	if scene == "" {
+		response.BadRequest(c, "scene is required")
+		return
+	}
+	cfg, err := model.FindOfficialAccountConfigByScene(database.DB, scene)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Success(c, nil)
+			return
+		}
+		response.ServerError(c, "failed to load official account config")
+		return
+	}
+	if cfg.Status != model.StatusEnabled {
+		response.Success(c, nil)
+		return
+	}
+	response.Success(c, gin.H{
+		"scene":       cfg.Scene,
+		"title":       cfg.Title,
+		"description": cfg.Description,
+		"qrcodeUrl":   cfg.QrcodeURL,
+		"linkText":    cfg.LinkText,
+	})
 }
 
 // Categories 查询教材分类单元

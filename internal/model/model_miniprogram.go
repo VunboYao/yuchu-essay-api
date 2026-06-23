@@ -81,3 +81,16 @@ type AdEvent struct {
 	TargetID   uint          `gorm:"index;comment:关联内容ID" json:"targetId"`
 	CreatedAt  jsontime.Time `gorm:"index;comment:事件时间" json:"createdAt"`
 }
+
+// Feedback 用户意见反馈。
+type Feedback struct {
+	ID        uint           `gorm:"primaryKey;comment:主键ID" json:"id"`
+	UserID    uint           `gorm:"index;not null;comment:提交用户ID" json:"userId"`
+	Content   string         `gorm:"type:text;not null;comment:反馈正文" json:"content"`
+	Status    string         `gorm:"size:20;index;not null;default:pending;comment:状态 pending/replied" json:"status"`
+	Reply     string         `gorm:"type:text;comment:管理员回复" json:"reply"`
+	RepliedAt *jsontime.Time `gorm:"comment:回复时间" json:"repliedAt"`
+	RepliedBy uint           `gorm:"index;comment:回复管理员ID" json:"repliedBy"`
+	CreatedAt jsontime.Time  `gorm:"index;comment:提交时间" json:"createdAt"`
+	UpdatedAt jsontime.Time  `gorm:"comment:更新时间" json:"updatedAt"`
+}

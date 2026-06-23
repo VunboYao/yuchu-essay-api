@@ -41,6 +41,10 @@ const (
 	TargetTypeEssay        = "essay"
 	TargetTypeDownloadFile = "download_file"
 
+	// 意见反馈状态
+	FeedbackStatusPending = "pending"
+	FeedbackStatusReplied = "replied"
+
 	// 最大正文图片数量
 	MaxBodyImages = 20
 
