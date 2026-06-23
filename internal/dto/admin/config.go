@@ -158,8 +158,7 @@ type UpsertOfficialAccountConfigRequest struct {
 	Scene       string `json:"scene" binding:"required"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	QrcodeURL   string `json:"qrcodeUrl"`
-	LinkText    string `json:"linkText"`
+	Username    string `json:"username" binding:"required"`
 	Status      *int   `json:"status"`
 }
 
@@ -168,12 +167,15 @@ func (r UpsertOfficialAccountConfigRequest) normalize() (model.OfficialAccountCo
 	if scene == "" {
 		return model.OfficialAccountConfig{}, fmt.Errorf("scene is required")
 	}
+	username := strings.TrimSpace(r.Username)
+	if username == "" {
+		return model.OfficialAccountConfig{}, fmt.Errorf("username is required")
+	}
 	return model.OfficialAccountConfig{
 		Scene:       scene,
 		Title:       strings.TrimSpace(r.Title),
 		Description: strings.TrimSpace(r.Description),
-		QrcodeURL:   strings.TrimSpace(r.QrcodeURL),
-		LinkText:    strings.TrimSpace(r.LinkText),
+		Username:    username,
 	}, nil
 }
 

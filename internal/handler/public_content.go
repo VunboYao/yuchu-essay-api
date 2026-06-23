@@ -44,7 +44,7 @@ func (s *Server) Home(c *gin.Context) {
 }
 
 // PublicAdSlots 返回启用中的广告位配置，供小程序按 slotKey 渲染流量主组件。
-// 可选 query page=home|article_detail|essay_detail|search 按所属页面过滤。
+// 可选 query page=home|article_detail|essay_detail|search|mine 按所属页面过滤。
 func (s *Server) PublicAdSlots(c *gin.Context) {
 	q := database.DB.Where("status = ?", model.StatusEnabled)
 	if page := strings.TrimSpace(c.Query("page")); page != "" {
@@ -78,12 +78,15 @@ func (s *Server) PublicOfficialAccountConfig(c *gin.Context) {
 		response.Success(c, nil)
 		return
 	}
+	if strings.TrimSpace(cfg.Username) == "" {
+		response.Success(c, nil)
+		return
+	}
 	response.Success(c, gin.H{
 		"scene":       cfg.Scene,
 		"title":       cfg.Title,
 		"description": cfg.Description,
-		"qrcodeUrl":   cfg.QrcodeURL,
-		"linkText":    cfg.LinkText,
+		"username":    cfg.Username,
 	})
 }
 

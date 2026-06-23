@@ -368,8 +368,7 @@ func (c OfficialAccountConfig) UpdateMap() map[string]interface{} {
 		"scene":       c.Scene,
 		"title":       c.Title,
 		"description": c.Description,
-		"qrcode_url":  c.QrcodeURL,
-		"link_text":   c.LinkText,
+		"username":    c.Username,
 		"status":      c.Status,
 	}
 }

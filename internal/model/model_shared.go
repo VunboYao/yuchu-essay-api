@@ -155,6 +155,8 @@ const (
 	AdSlotKeyEssayDetailBottom = "essay_detail_bottom"
 	// 搜索结果中间广告位
 	AdSlotKeySearchResultMid = "search_result_mid"
+	// 我的页顶部 Banner
+	AdSlotKeyMineTop = "mine_top"
 	// 资料下载激励视频门槛
 	AdSlotKeyDownloadRewardedVideo = "download_rewarded_video"
 )
@@ -165,6 +167,7 @@ const (
 	AdPageArticleDetail = "article_detail"
 	AdPageEssayDetail   = "essay_detail"
 	AdPageSearch        = "search"
+	AdPageMine          = "mine"
 	AdPageDownload      = "download"
 )
 
@@ -285,8 +288,7 @@ type OfficialAccountConfig struct {
 	Scene       string        `gorm:"size:80;uniqueIndex;not null;comment:场景标识" json:"scene"`
 	Title       string        `gorm:"size:120;comment:展示标题" json:"title"`
 	Description string        `gorm:"size:500;comment:描述文案" json:"description"`
-	QrcodeURL   string        `gorm:"size:500;comment:二维码图片URL" json:"qrcodeUrl"`
-	LinkText    string        `gorm:"size:120;comment:引导链接文案" json:"linkText"`
+	Username    string        `gorm:"size:64;comment:公众号原始ID(gh_开头,用于小程序跳转主页)" json:"username"`
 	Status      int           `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
 	CreatedAt   jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
 	UpdatedAt   jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`

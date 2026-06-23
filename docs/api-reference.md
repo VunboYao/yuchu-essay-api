@@ -1,7 +1,7 @@
 # API 参考文档（内容型作文 MVP 一期）
 
 > 路由源码唯一入口：[`internal/router/router.go`](../internal/router/router.go)  
-> 通用约定详见 [`README.md`](../README.md)。本文档覆盖 **61** 个 HTTP 端点。
+> 通用约定详见 [`README.md`](../README.md)。本文档覆盖 **65** 个 HTTP 端点。
 
 ---
 
@@ -40,7 +40,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 |------|------|------------|
 | 无 | 公开接口 | — |
 | Admin | 后台除 login 外全部 | `admin` |
-| User | 我的/收藏/历史/下载记录 | `user` |
+| User | 我的/收藏/历史/下载记录/意见反馈 | `user` |
 | OptionalUser | 下载签名、埋点；有 token 则解析 userId，无 token 仍放行 | 可选 `user` |
 
 ---
@@ -55,7 +55,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 ---
 
-## 三、后台 Admin API（39）
+## 三、后台 Admin API（41）
 
 ### 3.1 认证（1）
 
@@ -202,7 +202,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 - 物理删除：仅 `status=0`（已禁用）时可删；启用中返回 400
 - 首页入口：删除后不再出现在 `GET /api/v1/home` 的 `blocks` 中
-- 广告位：PRD 预置 `slotKey`（如 `home_feed_mid`）删除后，服务重启时 `SeedAdSlots` 会按缺失补回
+- 广告位：PRD 预置 `slotKey`（如 `home_feed_mid`、`mine_top`）删除后，服务重启时 `SeedAdSlots` 会按缺失补回；预置位默认禁用且 `adUnitId` 为空
 
 **广告位 Upsert Body**：`slotKey`、`slotName`、`page`、`position`、`adType`（`banner`/`rewarded_video`）、`adUnitId`、`sortOrder`、`status`
 
@@ -210,7 +210,30 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 ---
 
-## 四、小程序 API（21）
+### 3.10 意见反馈（2）
+
+均需 **AdminAuth**。
+
+| # | Method | Path | 说明 |
+|---|--------|------|------|
+| 1 | GET | `/feedbacks` | 分页列表；Query：`page`、`pageSize`、`status`（`pending`/`replied`）、`keyword`（匹配正文或回复） |
+| 2 | PUT | `/feedbacks/:id/reply` | 管理员回复；回复后 `status=replied` |
+
+**列表/详情项字段**（`FeedbackListItem`）：`id`、`userId`、`userNickname`、`content`、`status`、`reply`、`repliedAt`、`createdAt`
+
+**回复 Body**：
+
+```json
+{ "reply": "感谢您的反馈，已记录。" }
+```
+
+- `reply` 必填；trim 后非空；最长 **1000** 字（按 rune 计）
+- 成功返回更新后的反馈对象（含 `userNickname`）
+- 404：反馈不存在
+
+---
+
+## 四、小程序 API（23）
 
 ### 4.1 登录（1）
 
@@ -234,7 +257,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 | 5 | GET | `/essays` | 优秀作文列表 |
 | 6 | GET | `/essays/:id` | 优秀作文详情；可带关联文章精简信息 |
 | 7 | GET | `/search` | 全文搜索；Query：`keyword`（必填）、`sourceScene`；写 `search_logs` |
-| 8 | GET | `/ad-slots` | 启用广告位；Query：可选 `page` |
+| 8 | GET | `/ad-slots` | 启用广告位；Query：可选 `page`（`home` / `article_detail` / `essay_detail` / `search` / **`mine`**） |
 
 ---
 
@@ -274,7 +297,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 
 | # | Method | Path | 说明 |
 |---|--------|------|------|
-| 1 | GET | `/mine` | 收藏/浏览/下载计数概览 |
+| 1 | GET | `/mine` | 收藏/浏览/下载计数概览；**一期我的 Tab 不调用**，接口保留 |
 | 2 | GET | `/favorites` | 我的收藏分页 |
 | 3 | POST | `/favorites` | Body：`targetType`（`article`/`essay`）、`targetId`；去重 |
 | 4 | DELETE | `/favorites` | Query 或 Body：`targetType`、`targetId` |
@@ -282,6 +305,31 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 | 6 | GET | `/downloads` | 下载记录分页；`available` 反映当前是否仍可下载 |
 
 无 token 或 admin token → **401**。
+
+---
+
+### 4.6 意见反馈（2，UserAuth）
+
+| # | Method | Path | 说明 |
+|---|--------|------|------|
+| 1 | POST | `/feedbacks` | 提交反馈 |
+| 2 | GET | `/feedbacks` | 当前用户反馈分页列表 |
+
+**POST Body**：
+
+```json
+{ "content": "希望增加四年级下册范文" }
+```
+
+- `content` 必填；trim 后非空；最长 **300** 字（按 rune 计）
+- 新建 `status=pending`；成功返回单条 `FeedbackListItem`（不含 `userNickname`）
+
+**GET Query**：`page`、`pageSize`（默认 1 / 20，最大 100）
+
+**列表项字段**：`id`、`userId`、`content`、`status`（`pending` / `replied`）、`reply`、`repliedAt`、`createdAt`
+
+- 仅返回**当前登录用户**自己的反馈
+- 管理员回复后，用户在小程序「我的反馈」列表可见 `reply` 与 `repliedAt`
 
 ---
 
@@ -307,6 +355,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 | 场景 | 期望 |
 |------|------|
 | 无 token 访问 `/mine` | 401 |
+| 无 token 访问 `/feedbacks` | 401 |
 | admin token 访问 `/favorites` | 401 |
 | 无 token 访问 `/download-files/:id/sign-url` | 200/403（视资料权限，不强制登录） |
 | 无 token 访问 `/track/view` | 200，`userId=0` |

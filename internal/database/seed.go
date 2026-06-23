@@ -87,6 +87,15 @@ func SeedAdSlots() error {
 			SortOrder: 10,
 		},
 		{
+			SlotKey:   model.AdSlotKeyMineTop,
+			SlotName:  "我的页顶部",
+			Page:      model.AdPageMine,
+			Position:  "top",
+			AdType:    model.AdTypeBanner,
+			Status:    model.StatusDisabled,
+			SortOrder: 15,
+		},
+		{
 			SlotKey:   model.AdSlotKeyDownloadRewardedVideo,
 			SlotName:  "资料下载激励视频",
 			Page:      model.AdPageDownload,
@@ -103,9 +112,22 @@ func SeedAdSlots() error {
 			return err
 		}
 		if count == 0 {
-			if err := DB.Create(&slot).Error; err != nil {
+			// 显式 Select，避免 status=0 被 GORM 当作零值省略后落库为 default:1（启用）
+			if err := DB.Select(
+				"SlotKey", "SlotName", "Page", "Position", "AdType", "Status", "SortOrder",
+			).Create(&slot).Error; err != nil {
 				return err
 			}
+			continue
+		}
+		// 预置位未配置 adUnitId 时不应保持启用（修正历史 GORM 零值或误操作）
+		if err := DB.Model(&model.AdSlot{}).
+			Where(
+				"slot_key = ? AND status = ? AND (ad_unit_id = '' OR ad_unit_id IS NULL)",
+				slot.SlotKey, model.StatusEnabled,
+			).
+			Update("status", model.StatusDisabled).Error; err != nil {
+			return err
 		}
 	}
 	return nil

@@ -46,8 +46,8 @@ course_server/internal/handler/user_profile.go   # UploadUserAvatar、UpdateUser
 course_server/internal/router/router.go          # Static /uploads、POST /user/avatar
 miniApp/utils/upload.js
 miniApp/utils/media.js
-miniApp/pages/mine/index.js
-miniApp/README.md                                # 本地联调说明（头像不显示）
+miniApp/pages/mine/index.js          # 我的 Tab（无 profile UI；不调用 GET /mine）
+miniApp/README.md                  # 我的 Tab 一期定稿说明
 ```
 
 ---
