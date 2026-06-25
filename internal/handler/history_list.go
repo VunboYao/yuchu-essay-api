@@ -21,8 +21,15 @@ type HistoryListItem struct {
 	Target      any           `json:"target"`
 }
 
+// contentHistoryScope 浏览历史仅展示已关联文章/范文的内容记录，排除纯页面 PV。
+func contentHistoryScope(db *gorm.DB, userID uint) *gorm.DB {
+	return db.Model(&model.ViewLog{}).
+		Where("user_id = ?", userID).
+		Where("target_type IN ? AND target_id > 0", []string{model.TargetTypeArticle, model.TargetTypeEssay})
+}
+
 func loadHistoryListPage(userID uint, page, pageSize int) ([]HistoryListItem, int64, error) {
-	db := database.DB.Model(&model.ViewLog{}).Where("user_id = ?", userID)
+	db := contentHistoryScope(database.DB, userID)
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
