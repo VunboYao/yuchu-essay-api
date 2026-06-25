@@ -181,16 +181,8 @@ func buildDownloadGateResponse() model.DownloadGateInfo {
 
 func (s *Server) PublicEssays(c *gin.Context) {
 	page, pageSize := pageParams(c)
-	db := database.DB.Model(&model.EssayExample{}).Where("status = ?", model.StatusEnabled)
-	if grade := c.Query("grade"); grade != "" {
-		db = db.Where("grade = ?", grade)
-	}
-	if articleID := c.Query("articleId"); articleID != "" {
-		db = db.Where("article_id = ?", articleID)
-	}
-	if keyword := c.Query("keyword"); keyword != "" {
-		db = db.Where("title LIKE ? OR body LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
-	}
+	db := essayFilters(database.DB.Model(&model.EssayExample{}), c).
+		Where("status = ?", model.StatusEnabled)
 	var total int64
 	db.Count(&total)
 	var list []model.EssayExample
@@ -198,7 +190,22 @@ func (s *Server) PublicEssays(c *gin.Context) {
 		response.ServerError(c, "failed to list essays")
 		return
 	}
-	response.Page(c, list, total, page, pageSize)
+	essayIDs := make([]uint, 0, len(list))
+	for _, item := range list {
+		essayIDs = append(essayIDs, item.ID)
+	}
+	items := BuildEssayListItems(list, essayTagsByEssayIDs(essayIDs))
+	payload := gin.H{
+		"list":     items,
+		"total":    total,
+		"page":     page,
+		"pageSize": pageSize,
+	}
+	// 首屏附带可选标签，供小程序筛选栏渲染；total 已含当前全部筛选条件
+	if page == 1 {
+		payload["filterTags"] = listPublicEssayFilterTags(c)
+	}
+	response.Success(c, payload)
 }
 
 func (s *Server) PublicEssayDetail(c *gin.Context) {
@@ -240,7 +247,8 @@ func (s *Server) Search(c *gin.Context) {
 		return
 	}
 	page, pageSize := pageParams(c)
-	db := database.DB.Model(&model.Article{}).Where("status = ?", model.ArticleStatusPublished).
+	db := articleFilters(database.DB.Model(&model.Article{}), c).
+		Where("status = ?", model.ArticleStatusPublished).
 		Where("title LIKE ? OR essay_topic LIKE ? OR summary LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	var total int64
 	db.Count(&total)

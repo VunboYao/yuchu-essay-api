@@ -16,25 +16,9 @@ import (
 func (s *Server) ListEssayExamples(c *gin.Context) {
 	// 分页参数
 	page, pageSize := pageParams(c)
-	db := database.DB.Model(&model.EssayExample{})
-	// 筛选参数
-	if grade := c.Query("grade"); grade != "" {
-		db = db.Where("grade = ?", grade)
-	}
-	if articleID := c.Query("articleId"); articleID != "" {
-		db = db.Where("article_id = ?", articleID)
-	}
+	db := essayFilters(database.DB.Model(&model.EssayExample{}), c)
 	if status := c.Query("status"); status != "" {
 		db = db.Where("status = ?", status)
-	}
-	if tagID := c.Query("tagId"); tagID != "" {
-		db = db.Where(
-			"essay_examples.id IN (SELECT essay_id FROM essay_example_tags WHERE tag_id = ?)",
-			tagID,
-		)
-	}
-	if keyword := c.Query("keyword"); keyword != "" {
-		db = db.Where("title LIKE ? OR body LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	}
 	var total int64
 	db.Count(&total)
