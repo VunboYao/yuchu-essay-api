@@ -8,6 +8,7 @@ import (
 
 	"course_server/internal/dto"
 	"course_server/internal/model"
+	"course_server/internal/pkg/htmlsanitize"
 )
 
 // EssayExampleWriteRequest 优秀作文创建/更新共用入参；不含 id、时间戳与计数。
@@ -36,15 +37,24 @@ func resolveOptionalArticleID(ptr *uint) *uint {
 	return ptr
 }
 
-// countEssayWordCount 按正文字符统计字数（不计空白符，与中文「字数」习惯一致）。
+// countEssayWordCount 按正文纯文本统计字数（先 strip HTML 标签，不计空白符）。
 func countEssayWordCount(body string) int {
+	plain := htmlsanitize.StripTags(body)
 	n := 0
-	for _, r := range body {
+	for _, r := range plain {
 		if !unicode.IsSpace(r) {
 			n++
 		}
 	}
 	return n
+}
+
+func normalizeEssayHTML(field, value string) (string, error) {
+	clean := htmlsanitize.Sanitize(strings.TrimSpace(value))
+	if htmlsanitize.IsEffectivelyEmpty(clean) {
+		return "", fmt.Errorf("%s is required", field)
+	}
+	return clean, nil
 }
 
 func (r EssayExampleWriteRequest) normalize() (model.EssayExample, error) {
@@ -55,13 +65,13 @@ func (r EssayExampleWriteRequest) normalize() (model.EssayExample, error) {
 	if r.Grade <= 0 {
 		return model.EssayExample{}, fmt.Errorf("grade must be greater than 0")
 	}
-	body := strings.TrimSpace(r.Body)
-	if body == "" {
-		return model.EssayExample{}, fmt.Errorf("body is required")
+	body, err := normalizeEssayHTML("body", r.Body)
+	if err != nil {
+		return model.EssayExample{}, err
 	}
-	comment := strings.TrimSpace(r.Comment)
-	if comment == "" {
-		return model.EssayExample{}, fmt.Errorf("comment is required")
+	comment, err := normalizeEssayHTML("comment", r.Comment)
+	if err != nil {
+		return model.EssayExample{}, err
 	}
 	return model.EssayExample{
 		ArticleID: resolveOptionalArticleID(r.ArticleID),
