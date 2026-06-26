@@ -78,3 +78,17 @@ func TestBuildDownloadListItemsNotFreeTag(t *testing.T) {
 		t.Fatalf("expected unavailable without free tag, got %+v", items[0])
 	}
 }
+
+func TestBuildDownloadFileListItemsOwnerTitle(t *testing.T) {
+	t.Parallel()
+	files := []model.DownloadFile{{
+		ID: 1, FileName: "资料.pdf", OwnerType: model.TargetTypeArticle, OwnerID: 42,
+	}}
+	owners := map[uint]handler.OwnerArticleRef{
+		42: {ID: 42, Title: "三年级第一单元"},
+	}
+	items := handler.BuildDownloadFileListItems(files, owners)
+	if items[0].OwnerTitle != "三年级第一单元" {
+		t.Fatalf("unexpected owner title: %q", items[0].OwnerTitle)
+	}
+}

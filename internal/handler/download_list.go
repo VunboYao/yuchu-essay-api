@@ -75,18 +75,55 @@ func loadDownloadTargets(db *gorm.DB, logs []model.DownloadLog) (
 		}
 	}
 	ownerIDs := uniqueUintIDs(collectDownloadOwnerArticleIDs(files))
+	owners := ownerArticleRefsByIDs(db, ownerIDs)
+	return files, owners, nil
+}
+
+// DownloadFileListItem 后台下载资料列表项：资料字段 + 归属文章标题。
+type DownloadFileListItem struct {
+	model.DownloadFile
+	OwnerTitle string `json:"ownerTitle,omitempty"`
+}
+
+// ownerArticleRefsByIDs 按文章 ID 批量查标题与封面，供列表读时组装。
+func ownerArticleRefsByIDs(db *gorm.DB, ids []uint) map[uint]OwnerArticleRef {
 	owners := map[uint]OwnerArticleRef{}
-	if len(ownerIDs) > 0 {
-		var rows []OwnerArticleRef
-		if err := db.Model(&model.Article{}).Select("id", "title", "cover_img").
-			Where("id IN ?", ownerIDs).Find(&rows).Error; err != nil {
-			return nil, nil, err
-		}
-		for _, row := range rows {
-			owners[row.ID] = row
+	ids = uniqueUintIDs(ids)
+	if len(ids) == 0 {
+		return owners
+	}
+	var rows []OwnerArticleRef
+	db.Model(&model.Article{}).Select("id", "title", "cover_img").
+		Where("id IN ?", ids).Find(&rows)
+	for _, row := range rows {
+		owners[row.ID] = row
+	}
+	return owners
+}
+
+func collectOwnerArticleIDsFromFiles(files []model.DownloadFile) []uint {
+	ids := make([]uint, 0, len(files))
+	for _, f := range files {
+		if f.OwnerType == model.TargetTypeArticle && f.OwnerID > 0 {
+			ids = append(ids, f.OwnerID)
 		}
 	}
-	return files, owners, nil
+	return ids
+}
+
+// BuildDownloadFileListItems 将下载资料与批量查到的归属文章标题合并为列表项。
+func BuildDownloadFileListItems(files []model.DownloadFile, owners map[uint]OwnerArticleRef) []DownloadFileListItem {
+	items := make([]DownloadFileListItem, 0, len(files))
+	for _, f := range files {
+		item := DownloadFileListItem{DownloadFile: f}
+		if f.OwnerType == model.TargetTypeArticle && f.OwnerID > 0 {
+			if owner, ok := owners[f.OwnerID]; ok {
+				item.OwnerTitle = owner.Title
+			}
+		}
+		items = append(items, item)
+	}
+	return items
 }
 
 func collectDownloadFileIDs(logs []model.DownloadLog) []uint {

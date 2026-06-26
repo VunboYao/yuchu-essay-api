@@ -40,7 +40,10 @@ func (s *Server) ListDownloadFiles(c *gin.Context) {
 		response.ServerError(c, "failed to list download files")
 		return
 	}
-	response.Page(c, list, total, page, pageSize)
+	ownerIDs := collectOwnerArticleIDsFromFiles(list)
+	owners := ownerArticleRefsByIDs(database.DB, ownerIDs)
+	items := BuildDownloadFileListItems(list, owners)
+	response.Page(c, items, total, page, pageSize)
 }
 
 // CreateDownloadFile 创建下载文件

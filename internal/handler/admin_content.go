@@ -41,7 +41,11 @@ func (s *Server) ListArticles(c *gin.Context) {
 	for _, item := range list {
 		articleIDs = append(articleIDs, item.ID)
 	}
-	items := BuildArticleListItems(list, articleTagsByArticleIDs(articleIDs))
+	items := BuildArticleListItems(
+		list,
+		articleTagsByArticleIDs(articleIDs),
+		downloadSummaryByArticleIDs(articleIDs),
+	)
 	response.Page(c, items, total, page, pageSize)
 }
 

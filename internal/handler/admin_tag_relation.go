@@ -68,10 +68,17 @@ func replaceEssayTags(tx *gorm.DB, essayID uint, tagIDs []uint) error {
 	return tx.Create(&rows).Error
 }
 
+// ArticleDownloadSummary 后台文章列表附带的下载资料汇总（读时聚合，不落库）。
+type ArticleDownloadSummary struct {
+	Total      int `json:"total"`
+	PublicFree int `json:"publicFree"`
+}
+
 // ArticleListItem 后台文章列表项：文章字段 + 关联标签（平铺 tags 便于表格绑定）。
 type ArticleListItem struct {
 	model.Article
-	Tags []model.Tag `json:"tags"`
+	Tags            []model.Tag            `json:"tags"`
+	DownloadSummary ArticleDownloadSummary `json:"downloadSummary"`
 }
 
 // articleTagRow 批量查询 article_tags JOIN tags 时的扫描行。
@@ -100,15 +107,46 @@ func articleTagsByArticleIDs(articleIDs []uint) map[uint][]model.Tag {
 	return result
 }
 
-// BuildArticleListItems 将文章列表与标签映射组装为列表响应项。
-func BuildArticleListItems(articles []model.Article, tagsByArticleID map[uint][]model.Tag) []ArticleListItem {
+// downloadSummaryByArticleIDs 批量统计文章关联下载资料总数及前台可下载数。
+func downloadSummaryByArticleIDs(articleIDs []uint) map[uint]ArticleDownloadSummary {
+	result := make(map[uint]ArticleDownloadSummary, len(articleIDs))
+	if len(articleIDs) == 0 {
+		return result
+	}
+	var files []model.DownloadFile
+	database.DB.Model(&model.DownloadFile{}).
+		Select("owner_id", "tags", "access_type", "status").
+		Where("owner_type = ? AND owner_id IN ?", model.TargetTypeArticle, articleIDs).
+		Find(&files)
+	for _, f := range files {
+		s := result[f.OwnerID]
+		s.Total++
+		if model.IsPublicFreeDownload(f) {
+			s.PublicFree++
+		}
+		result[f.OwnerID] = s
+	}
+	return result
+}
+
+// BuildArticleListItems 将文章列表与标签、下载汇总映射组装为列表响应项。
+func BuildArticleListItems(
+	articles []model.Article,
+	tagsByArticleID map[uint][]model.Tag,
+	downloadsByArticleID map[uint]ArticleDownloadSummary,
+) []ArticleListItem {
 	items := make([]ArticleListItem, 0, len(articles))
 	for _, article := range articles {
 		tags := tagsByArticleID[article.ID]
 		if tags == nil {
 			tags = []model.Tag{}
 		}
-		items = append(items, ArticleListItem{Article: article, Tags: tags})
+		summary := downloadsByArticleID[article.ID]
+		items = append(items, ArticleListItem{
+			Article:         article,
+			Tags:            tags,
+			DownloadSummary: summary,
+		})
 	}
 	return items
 }
