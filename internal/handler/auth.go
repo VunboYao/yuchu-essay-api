@@ -9,6 +9,7 @@ import (
 	"course_server/internal/model"
 	jwtutil "course_server/internal/pkg/jwt"
 	"course_server/internal/pkg/response"
+	wxutil "course_server/internal/pkg/wechat"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -67,15 +68,24 @@ type wxLoginRequest struct {
 }
 
 // WxLogin 小程序登录（Day8）：按 openid 查找或创建用户并签发 user JWT。
-// 当前为开发占位：openid = "dev_" + code；配置 wechat 后应改为 code2session。
+// 未配置 wechat 凭证时 openid = "dev_" + code（本地联调）；配置后走 code2session。
 func (s *Server) WxLogin(c *gin.Context) {
 	// 1. 绑定请求参数
 	var req wxLoginRequest
 	if !bindJSON(c, &req) {
 		return
 	}
-	// 2. 构建 openid
 	openid := "dev_" + req.Code
+	unionid := ""
+	if !wxutil.DevMode(s.Config.Wechat.AppID, s.Config.Wechat.AppSecret) {
+		sess, err := wxutil.Code2Session(s.Config.Wechat.AppID, s.Config.Wechat.AppSecret, req.Code)
+		if err != nil {
+			response.BadRequest(c, "wechat login failed")
+			return
+		}
+		openid = sess.OpenID
+		unionid = sess.UnionID
+	}
 	// 3. 查询用户
 	var user model.User
 	err := database.DB.Where("open_id = ?", openid).First(&user).Error
@@ -88,6 +98,7 @@ func (s *Server) WxLogin(c *gin.Context) {
 		// 4. 创建用户
 		user = model.User{
 			OpenID:      openid,
+			UnionID:     unionid,
 			SourceScene: req.SourceScene,
 			Nickname:    req.Nickname,
 			Avatar:      req.Avatar,
@@ -100,6 +111,9 @@ func (s *Server) WxLogin(c *gin.Context) {
 	} else {
 		// 5. 更新用户信息
 		updates := map[string]interface{}{}
+		if unionid != "" && user.UnionID != unionid {
+			updates["union_id"] = unionid
+		}
 		if req.SourceScene != "" {
 			updates["source_scene"] = req.SourceScene
 		}

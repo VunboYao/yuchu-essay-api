@@ -4,6 +4,7 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -46,6 +47,22 @@ type OSSConfig struct {
 	Bucket          string `yaml:"bucket"`            // 存储桶名称
 	AccessKeyID     string `yaml:"access_key_id"`     // 阿里云 AccessKey ID
 	AccessKeySecret string `yaml:"access_key_secret"` // 阿里云 AccessKey Secret
+	CDNDomain       string `yaml:"cdn_domain"`        // 对外 CDN HTTPS 域名（可选）
+	STSRoleARN      string `yaml:"sts_role_arn"`      // RAM 角色 ARN，Admin STS 直传
+	UploadDir       string `yaml:"upload_dir"`        // 上传根前缀，默认 essay-mvp
+}
+
+// IsConfigured 主凭证与 bucket 齐全，可用于预签名下载。
+func (o OSSConfig) IsConfigured() bool {
+	return strings.TrimSpace(o.Endpoint) != "" &&
+		strings.TrimSpace(o.Bucket) != "" &&
+		strings.TrimSpace(o.AccessKeyID) != "" &&
+		strings.TrimSpace(o.AccessKeySecret) != ""
+}
+
+// IsSTSEnabled STS 直传所需角色 ARN 已配置。
+func (o OSSConfig) IsSTSEnabled() bool {
+	return o.IsConfigured() && strings.TrimSpace(o.STSRoleARN) != ""
 }
 
 // WechatConfig 微信小程序配置，Day8 接入微信登录时使用

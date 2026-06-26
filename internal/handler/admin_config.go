@@ -271,13 +271,22 @@ func (s *Server) DeleteOfficialAccountConfig(c *gin.Context) {
 	response.Success(c, gin.H{"id": id})
 }
 
-// UploadSTS 封面上传临时凭证（Day7 占位）；需配置 config.yaml 中 oss 后实现真实 STS。
+// UploadSTS 签发 OSS STS 临时凭证供 Admin 浏览器直传；未配置时返回占位。
 func (s *Server) UploadSTS(c *gin.Context) {
-	middleware.SetOpLogRemark(c, "获取 OSS 上传凭证（占位）")
-	response.Success(c, gin.H{
-		"mode":    "placeholder",
-		"message": "configure OSS credentials before enabling direct upload",
-	})
+	middleware.SetOpLogRemark(c, "获取 OSS 上传凭证")
+	if !s.OSS.IsSTSEnabled() {
+		response.Success(c, gin.H{
+			"mode":    "placeholder",
+			"message": "configure oss endpoint/bucket/access_key and sts_role_arn before enabling direct upload",
+		})
+		return
+	}
+	cred, err := s.OSS.IssueSTSCredentials()
+	if err != nil {
+		response.ServerError(c, "failed to issue oss sts credentials")
+		return
+	}
+	response.Success(c, cred)
 }
 
 // DeleteByID 通用删除 stub，未在 router 注册，勿调用。

@@ -3,9 +3,7 @@ package handler
 
 import (
 	"errors"
-	"strconv"
 	"strings"
-	"time"
 
 	"course_server/internal/database"
 	admindto "course_server/internal/dto/admin"
@@ -195,7 +193,7 @@ func (s *Server) SignDownloadURL(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"url":       pseudoSignedURL(file.FileURL),
+		"url":       s.OSS.SignDownloadURL(file.FileURL, 300),
 		"expiresIn": 300,
 		"file":      file,
 	})
@@ -265,13 +263,4 @@ func loadDownloadGate() (model.AdSlot, error) {
 		return model.AdSlot{}, nil
 	}
 	return slot, err
-}
-
-// pseudoSignedURL 开发期伪签名（拼接 expires）；生产应替换为 OSS 预签名 URL。
-func pseudoSignedURL(fileURL string) string {
-	sep := "?"
-	if strings.Contains(fileURL, "?") {
-		sep = "&"
-	}
-	return fileURL + sep + "expires=" + strconv.FormatInt(time.Now().Add(5*time.Minute).Unix(), 10)
 }
