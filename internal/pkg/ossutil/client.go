@@ -90,7 +90,7 @@ func (c *Client) IssueSTSCredentials() (*STSCredentials, error) {
 		Expiration:      cred.Expiration,
 		Bucket:          c.cfg.Bucket,
 		Endpoint:        normalizeEndpoint(c.cfg.Endpoint),
-		Region:          region,
+		Region:          ossRegionID(c.cfg.Endpoint),
 		Dir:             prefix,
 		CDNDomain:       strings.TrimSpace(c.cfg.CDNDomain),
 	}, nil
@@ -178,7 +178,7 @@ func uploadPolicy(bucket, prefix string) string {
 		"Version": "1",
 		"Statement": []map[string]any{{
 			"Effect":   "Allow",
-			"Action":   []string{"oss:PutObject"},
+			"Action":   []string{"oss:PutObject", "oss:PutObjectAcl"},
 			"Resource": []string{fmt.Sprintf("acs:oss:*:*:%s/%s/*", bucket, prefix)},
 		}},
 	}
@@ -187,12 +187,17 @@ func uploadPolicy(bucket, prefix string) string {
 }
 
 func regionFromEndpoint(endpoint string) string {
+	return strings.TrimPrefix(ossRegionID(endpoint), "oss-")
+}
+
+// ossRegionID 返回 ali-oss / 对外 STS 所需的 region，如 oss-cn-guangzhou。
+func ossRegionID(endpoint string) string {
 	ep := normalizeEndpoint(endpoint)
 	parts := strings.Split(ep, ".")
 	if len(parts) > 0 && strings.HasPrefix(parts[0], "oss-") {
-		return strings.TrimPrefix(parts[0], "oss-")
+		return parts[0]
 	}
-	return "cn-hangzhou"
+	return "oss-cn-guangzhou"
 }
 
 func normalizeEndpoint(endpoint string) string {

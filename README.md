@@ -287,8 +287,8 @@ headers: { Authorization: `Bearer ${token}` }
 ```json
 {
   "bodyImages": [
-    "https://oss.example.com/article/1-part1.jpg",
-    "https://oss.example.com/article/1-part2.jpg"
+    "https://cdn.vunbo.com/article/1-part1.jpg",
+    "https://cdn.vunbo.com/article/1-part2.jpg"
   ]
 }
 ```
@@ -384,7 +384,9 @@ database.DB.Create(&tag)
 | [docs/api-reference.md](./docs/api-reference.md) | **全量 API 参考**（57 端点） |
 | [docs/api-self-test-checklist.md](./docs/api-self-test-checklist.md) | 后端全量自测勾选表 |
 | [docs/download-permission-boundary.md](./docs/download-permission-boundary.md) | 下载权限边界矩阵与手工步骤 |
-| [docs/oss-upload-backlog.md](./docs/oss-upload-backlog.md) | **OSS 上传统一改造待办**（含小程序头像本地上传已知问题） |
+| [docs/domain-vunbo.md](./docs/domain-vunbo.md) | **生产域名规范**（api / admin / cdn.vunbo.com） |
+| [docs/oss-setup-guide.md](./docs/oss-setup-guide.md) | **阿里云 OSS 接入指南**（RAM/STS/CORS + 验收步骤） |
+| [docs/oss-upload-backlog.md](./docs/oss-upload-backlog.md) | OSS 待办（小程序头像等 P1 项） |
 | [docs/postman/](./docs/postman/) | Postman Collection v2.1 + 本地环境 |
 | [prd/001-产品整体结构.md](../prd/001-产品整体结构.md) | 产品整体结构 |
 | [prd/003-技术文档介绍.md](../prd/003-技术文档介绍.md) | 技术方案与接口规范 |

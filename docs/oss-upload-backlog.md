@@ -35,7 +35,7 @@
 
 - [ ] 头像上传改为 **OSS 直传（STS）** 或 **后端接收后转存 OSS**（与后台封面、资料文件统一链路）
 - [ ] `users.avatar` 统一存 **OSS 公网 HTTPS URL** 或 **objectKey**（展示层拼 CDN 域名）
-- [ ] 微信公众平台配置 **downloadFile 合法域名**（OSS/CDN 域名）
+- [ ] 微信公众平台配置 **downloadFile 合法域名**（`cdn.vunbo.com`）
 - [ ] 更换头像时 **删除或覆盖旧 object**（可选）
 - [ ] 下线或保留 `POST /user/avatar` + `r.Static("/uploads")` 仅作本地开发兼容（按环境开关）
 

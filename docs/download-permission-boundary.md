@@ -87,7 +87,7 @@ Content-Type: application/json
   "tags": "免费,测试",
   "accessType": "free",
   "fileType": "pdf",
-  "fileUrl": "https://oss.example.com/boundary-test.pdf",
+  "fileUrl": "https://cdn.vunbo.com/essay-mvp/boundary-test.pdf",
   "status": 1
 }
 ```
