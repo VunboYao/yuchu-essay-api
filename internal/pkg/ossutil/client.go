@@ -141,6 +141,42 @@ func (c *Client) ObjectKeyFromURL(fileURL string) (string, bool) {
 	return c.parseObjectKey(fileURL)
 }
 
+// NormalizeObjectRef 入库前规范化：自家 OSS/CDN URL 或裸 key → objectKey；外链原样保留。
+func (c *Client) NormalizeObjectRef(ref string) string {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return ""
+	}
+	if key, ok := c.parseObjectKey(ref); ok {
+		return key
+	}
+	return ref
+}
+
+// NormalizeObjectRefs 批量 NormalizeObjectRef。
+func (c *Client) NormalizeObjectRefs(refs []string) []string {
+	if len(refs) == 0 {
+		return refs
+	}
+	out := make([]string, len(refs))
+	for i, r := range refs {
+		out[i] = c.NormalizeObjectRef(r)
+	}
+	return out
+}
+
+// ResolvePublicURL 读时解析：OSS 引用 → 当前配置的 PublicURL；外链原样返回。
+func (c *Client) ResolvePublicURL(ref string) string {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return ""
+	}
+	if key, ok := c.parseObjectKey(ref); ok {
+		return c.PublicURL(key)
+	}
+	return ref
+}
+
 func (c *Client) parseObjectKey(fileURL string) (string, bool) {
 	fileURL = strings.TrimSpace(fileURL)
 	if fileURL == "" {

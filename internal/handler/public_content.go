@@ -35,6 +35,10 @@ func (s *Server) Home(c *gin.Context) {
 	database.DB.Where("status = ?", model.StatusEnabled).
 		Order("sort_order DESC, id DESC").Find(&blocks)
 
+	s.resolveArticlesMedia(recommended)
+	s.resolveArticlesMedia(hot)
+	s.resolveHomeBlocksMedia(blocks)
+
 	response.Success(c, gin.H{
 		"recommendedArticles": recommended,
 		"hotArticles":         hot,
@@ -113,6 +117,7 @@ func (s *Server) PublicArticles(c *gin.Context) {
 		response.ServerError(c, "failed to list articles")
 		return
 	}
+	s.resolveArticlesMedia(list)
 	response.Page(c, list, total, page, pageSize)
 }
 
@@ -138,6 +143,9 @@ func (s *Server) PublicArticleDetail(c *gin.Context) {
 		Order("sort_order DESC, id DESC").Find(&downloads)
 
 	relatedArticles := listRelatedArticles(item, relatedArticleLimit)
+
+	s.resolveArticleMedia(&item)
+	s.resolveArticlesMedia(relatedArticles)
 
 	response.Success(c, gin.H{
 		"article":         item,
@@ -257,6 +265,7 @@ func (s *Server) Search(c *gin.Context) {
 		response.ServerError(c, "failed to search")
 		return
 	}
+	s.resolveArticlesMedia(list)
 	database.DB.Create(&model.SearchLog{Keyword: keyword, ResultCount: int(total), SourceScene: c.Query("sourceScene")})
 	response.Page(c, list, total, page, pageSize)
 }

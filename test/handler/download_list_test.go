@@ -26,7 +26,7 @@ func TestBuildDownloadListItemsAvailable(t *testing.T) {
 	owners := map[uint]handler.OwnerArticleRef{
 		42: {ID: 42, Title: "专题标题", CoverImg: "https://img/cover.jpg"},
 	}
-	items := handler.BuildDownloadListItems(logs, files, owners)
+	items := handler.BuildDownloadListItems(logs, files, owners, nil)
 	if !items[0].Available {
 		t.Fatalf("expected available download, got %+v", items[0])
 	}
@@ -45,7 +45,7 @@ func TestBuildDownloadListItemsDisabledFile(t *testing.T) {
 			Tags: "免费", AccessType: model.AccessTypeFree, Status: model.StatusDisabled,
 		},
 	}
-	items := handler.BuildDownloadListItems(logs, files, nil)
+	items := handler.BuildDownloadListItems(logs, files, nil, nil)
 	if items[0].Available {
 		t.Fatalf("expected unavailable disabled file, got %+v", items[0])
 	}
@@ -58,7 +58,7 @@ func TestBuildDownloadListItemsDisabledFile(t *testing.T) {
 func TestBuildDownloadListItemsMissingFile(t *testing.T) {
 	t.Parallel()
 	logs := []model.DownloadLog{{ID: 1, FileID: 999}}
-	items := handler.BuildDownloadListItems(logs, map[uint]model.DownloadFile{}, nil)
+	items := handler.BuildDownloadListItems(logs, map[uint]model.DownloadFile{}, nil, nil)
 	if items[0].Available || items[0].Target != nil {
 		t.Fatalf("expected missing file unavailable, got %+v", items[0])
 	}
@@ -73,7 +73,7 @@ func TestBuildDownloadListItemsNotFreeTag(t *testing.T) {
 			AccessType: model.AccessTypeFree, Status: model.StatusEnabled,
 		},
 	}
-	items := handler.BuildDownloadListItems(logs, files, nil)
+	items := handler.BuildDownloadListItems(logs, files, nil, nil)
 	if items[0].Available {
 		t.Fatalf("expected unavailable without free tag, got %+v", items[0])
 	}

@@ -37,6 +37,7 @@ func (s *Server) ListArticles(c *gin.Context) {
 		response.ServerError(c, "failed to list articles")
 		return
 	}
+	s.resolveArticlesMedia(list)
 	articleIDs := make([]uint, 0, len(list))
 	for _, item := range list {
 		articleIDs = append(articleIDs, item.ID)
@@ -62,6 +63,7 @@ func (s *Server) CreateArticle(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	s.applyArticleWriteMedia(&article)
 	// 检查 slug 是否重复
 	if err := model.CheckArticleSlugDuplicate(database.DB, article.Slug, 0); err != nil {
 		response.BadRequest(c, err.Error())
@@ -82,6 +84,7 @@ func (s *Server) CreateArticle(c *gin.Context) {
 	}
 	middleware.SetOpLogRemark(c, "创建文章：《"+article.Title+"》")
 	middleware.SetOpLogTargetID(c, article.ID)
+	s.resolveArticleMedia(&article)
 	response.Success(c, gin.H{
 		"article": article,
 		"tags":    s.articleTags(article.ID),
@@ -100,6 +103,7 @@ func (s *Server) GetArticle(c *gin.Context) {
 		response.NotFound(c, "article not found")
 		return
 	}
+	s.resolveArticleMedia(&item)
 	response.Success(c, gin.H{
 		"article": item,
 		"tags":    s.articleTags(item.ID),
@@ -130,6 +134,7 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	s.applyArticleWriteMedia(&article)
 	// 检查 slug 是否重复
 	if err := model.CheckArticleSlugDuplicate(database.DB, article.Slug, item.ID); err != nil {
 		response.BadRequest(c, err.Error())
@@ -149,6 +154,7 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 		return
 	}
 	middleware.SetOpLogRemark(c, "更新文章：《"+item.Title+"》")
+	s.resolveArticleMedia(&item)
 	response.Success(c, gin.H{
 		"article": item,
 		"tags":    s.articleTags(item.ID),

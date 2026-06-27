@@ -19,7 +19,7 @@ func TestBuildHistoryListItemsArticle(t *testing.T) {
 	articles := map[uint]model.Article{
 		10: {ID: 10, Title: "专题", CoverImg: "https://img/a.jpg", Status: model.ArticleStatusPublished},
 	}
-	items := handler.BuildHistoryListItems(logs, articles, nil, nil)
+	items := handler.BuildHistoryListItems(logs, articles, nil, nil, nil)
 	if !items[0].Available || items[0].PagePath != "pages/article/detail" {
 		t.Fatalf("unexpected item: %+v", items[0])
 	}
@@ -31,7 +31,7 @@ func TestBuildHistoryListItemsUnavailable(t *testing.T) {
 	articles := map[uint]model.Article{
 		10: {ID: 10, Title: "草稿", Status: model.ArticleStatusDraft},
 	}
-	items := handler.BuildHistoryListItems(logs, articles, nil, nil)
+	items := handler.BuildHistoryListItems(logs, articles, nil, nil, nil)
 	if items[0].Available || items[0].Target != nil {
 		t.Fatalf("expected unavailable, got %+v", items[0])
 	}
@@ -40,7 +40,7 @@ func TestBuildHistoryListItemsUnavailable(t *testing.T) {
 func TestBuildHistoryListItemsUnknownType(t *testing.T) {
 	t.Parallel()
 	logs := []model.ViewLog{{ID: 1, TargetType: "unknown", TargetID: 1}}
-	items := handler.BuildHistoryListItems(logs, nil, nil, nil)
+	items := handler.BuildHistoryListItems(logs, nil, nil, nil, nil)
 	if items[0].Available || items[0].Target != nil {
 		t.Fatalf("expected unknown type unavailable, got %+v", items[0])
 	}
@@ -58,7 +58,7 @@ func TestBuildHistoryListItemsPreservesOrder(t *testing.T) {
 	articles := map[uint]model.Article{
 		2: {ID: 2, Title: "A", Status: model.ArticleStatusPublished},
 	}
-	items := handler.BuildHistoryListItems(logs, articles, essays, nil)
+	items := handler.BuildHistoryListItems(logs, articles, essays, nil, nil)
 	if items[0].ID != 2 || items[1].ID != 1 {
 		t.Fatalf("order mismatch: %+v", items)
 	}

@@ -28,7 +28,7 @@ func contentHistoryScope(db *gorm.DB, userID uint) *gorm.DB {
 		Where("target_type IN ? AND target_id > 0", []string{model.TargetTypeArticle, model.TargetTypeEssay})
 }
 
-func loadHistoryListPage(userID uint, page, pageSize int) ([]HistoryListItem, int64, error) {
+func loadHistoryListPage(userID uint, page, pageSize int, resolve MediaURLResolver) ([]HistoryListItem, int64, error) {
 	db := contentHistoryScope(database.DB, userID)
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -45,7 +45,7 @@ func loadHistoryListPage(userID uint, page, pageSize int) ([]HistoryListItem, in
 	if err != nil {
 		return nil, 0, err
 	}
-	return BuildHistoryListItems(logs, articles, essays, linkedArticles), total, nil
+	return BuildHistoryListItems(logs, articles, essays, linkedArticles, resolve), total, nil
 }
 
 func loadHistoryTargets(db *gorm.DB, logs []model.ViewLog) (
@@ -68,10 +68,12 @@ func BuildHistoryListItems(
 	articles map[uint]model.Article,
 	essays map[uint]model.EssayExample,
 	linkedArticles map[uint]ArticleTitleRef,
+	resolve MediaURLResolver,
 ) []HistoryListItem {
 	items := make([]HistoryListItem, 0, len(logs))
 	for _, log := range logs {
 		available, target := buildContentTarget(log.TargetType, log.TargetID, articles, essays, linkedArticles)
+		target = resolveContentArticleTarget(target, resolve)
 		items = append(items, HistoryListItem{
 			ID:          log.ID,
 			TargetType:  log.TargetType,
