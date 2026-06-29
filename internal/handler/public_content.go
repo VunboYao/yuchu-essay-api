@@ -247,7 +247,7 @@ func (s *Server) PublicEssayDetail(c *gin.Context) {
 	response.Success(c, resp)
 }
 
-// Search 在已发布文章中检索，并写入 search_logs（供后台热门搜索统计）。
+// Search 在已发布文章中检索；搜索埋点由 POST /track/search 写入 search_logs。
 func (s *Server) Search(c *gin.Context) {
 	keyword := strings.TrimSpace(c.Query("keyword"))
 	if keyword == "" {
@@ -266,6 +266,5 @@ func (s *Server) Search(c *gin.Context) {
 		return
 	}
 	s.resolveArticlesMedia(list)
-	database.DB.Create(&model.SearchLog{Keyword: keyword, ResultCount: int(total), SourceScene: c.Query("sourceScene")})
 	response.Page(c, list, total, page, pageSize)
 }

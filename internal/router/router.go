@@ -160,7 +160,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 			track.POST("/track/view", h.TrackView)
 			// 分享
 			track.POST("/track/share", h.TrackShare)
-			// 搜索: 在独立搜索接口中实现，这里只记录日志
+			// 搜索埋点（检索走 GET /search，日志仅此一处写入 search_logs）
 			track.POST("/track/search", h.TrackSearch)
 			// 广告
 			track.POST("/track/ad", h.TrackAd)

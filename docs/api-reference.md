@@ -256,7 +256,7 @@ Header：`Authorization: Bearer <token>`（兼容裸 token）
 | 4 | GET | `/articles/:id` | 已发布详情；递增 `view_count`；返回可免费下载资料 + `downloadGate` |
 | 5 | GET | `/essays` | 优秀作文列表 |
 | 6 | GET | `/essays/:id` | 优秀作文详情；可带关联文章精简信息 |
-| 7 | GET | `/search` | 全文搜索；Query：`keyword`（必填）、`sourceScene`；写 `search_logs` |
+| 7 | GET | `/search` | 全文搜索；Query：`keyword`（必填）、`page`、`pageSize`；搜索埋点见 `POST /track/search` |
 | 8 | GET | `/ad-slots` | 启用广告位；Query：可选 `page`（`home` / `article_detail` / `essay_detail` / `search` / **`mine`**） |
 
 ---
