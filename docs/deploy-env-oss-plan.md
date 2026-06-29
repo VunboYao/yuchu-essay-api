@@ -117,7 +117,7 @@ cdn_domain 已填 → https://cdn.vunbo.com/{key}           （生产 CDN）
 
 - [ ] DNS：`api` / `admin` → 云服务器 IP
 - [ ] 云服务器：MySQL + Redis + Go 后端 + Nginx
-- [ ] TLS：`api.vunbo.com`、`admin.vunbo.com`（Let's Encrypt 或云证书）
+- [ ] TLS：阿里云免费 SSL 单域名证书，Nginx 分别绑定 `api.vunbo.com` / `admin.vunbo.com`
 - [ ] 生产 `config.yaml`（JWT、DSN、微信、OSS）
 - [ ] Admin `pnpm build` → `/var/www/admin`
 - [ ] 小程序 `ENV=production` + 上传审核
@@ -126,7 +126,7 @@ cdn_domain 已填 → https://cdn.vunbo.com/{key}           （生产 CDN）
 
 - [ ] 阿里云 CDN 加速 OSS，绑 `cdn.vunbo.com`
 - [ ] DNS：`cdn` CNAME → CDN 分配域名
-- [ ] CDN 控制台 HTTPS 证书
+- [ ] CDN 控制台 HTTPS 证书（`cdn.vunbo.com` 后续单独绑定）
 - [ ] 生产 `cdn_domain: "https://cdn.vunbo.com"` + 重启
 - [ ] OSS CORS 加 `https://admin.vunbo.com`
 - [ ] 微信 downloadFile 合法域名加 `cdn.vunbo.com`
@@ -137,7 +137,7 @@ cdn_domain 已填 → https://cdn.vunbo.com/{key}           （生产 CDN）
 
 | 规格 | 说明 |
 |------|------|
-| **2C2G** | MVP 可跑（Go + MySQL + Redis + Nginx 同机） |
+| **2C2G** | MVP 可跑（Go + MySQL + Nginx 同机；Redis 一期可不装） |
 | **2C4G** | Admin 构建、MySQL 占内存偏高时升级 |
 
 进程建议绑定 `127.0.0.1:8080`，仅 Nginx 对外 443。
@@ -146,62 +146,48 @@ cdn_domain 已填 → https://cdn.vunbo.com/{key}           （生产 CDN）
 
 ## 七、生产部署步骤（copy-paste）
 
+**Alibaba Cloud Linux 4 完整手册（E1 起、含修订命令）**：[`deploy/deploy-alinux4.md`](../deploy/deploy-alinux4.md)
+
+Ubuntu / Debian 可参考同文件，将 `dnf` 换为 `apt`，Nginx 站点放 `sites-enabled/`。
+
 ### 7.1 目录约定（可按需改路径）
 
 ```text
 /opt/essay-mvp/course_server/   # Go 源码 + essay-mvp 二进制 + config.yaml
 /var/www/admin/                 # Admin pnpm build 的 dist 内容
 /etc/systemd/system/essay-mvp.service
-/etc/nginx/sites-enabled/essay-mvp   # 链到 deploy/nginx-vunbo.conf
+/etc/nginx/conf.d/essay-mvp.conf   # ALinux 4；Ubuntu 可用 sites-enabled
 ```
 
 ### 7.2 后端（不用 air）
 
-```bash
-# 云服务器上
-cd /opt/essay-mvp/course_server
-cp config.prod.yaml.example config.yaml   # 编辑 dsn、jwt、oss、wechat
-go build -o essay-mvp .
+见 [`deploy/deploy-alinux4.md`](../deploy/deploy-alinux4.md) 阶段 E3–E6。要点：
 
-# 试跑（Ctrl+C 停掉后再走 systemd）
-./essay-mvp
-curl -s http://127.0.0.1:8080/health
-
-sudo cp deploy/essay-mvp.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now essay-mvp
-sudo systemctl status essay-mvp
-```
-
-改代码上线：`git pull && go build -o essay-mvp . && sudo systemctl restart essay-mvp`
+- `sudo -u essay go build`；运行用户 `essay`（非 www-data）
+- MySQL 用户须 `'essay'@'127.0.0.1'`；`redis.addr` 一期可留空
+- `GOPROXY=https://goproxy.cn,direct`
 
 ### 7.3 Admin（不用 pnpm dev）
 
 ```bash
-# 可在本机或服务器构建
-cd Admin
-pnpm install
-pnpm build
-
-# 上传到服务器（示例）
-rsync -avz dist/ user@你的IP:/var/www/admin/
+# 本机构建后上传（推荐）
+cd Admin && pnpm install && pnpm build
+rsync -avz dist/ user@你的IP:/tmp/admin-dist/
+# 服务器：sudo rsync -av /tmp/admin-dist/ /var/www/admin/
 ```
 
 `.env.production` 保持 `VITE_API_BASE=/admin/api/v1`（由 Nginx 反代，无需改域名）。
 
 ### 7.4 Nginx + HTTPS
 
-```bash
-sudo apt install nginx certbot python3-certbot-nginx   # Debian/Ubuntu
-sudo certbot certonly --nginx -d api.vunbo.com
-sudo certbot certonly --nginx -d admin.vunbo.com
+阿里云免费 SSL 单域名证书（非 certbot）：
 
-sudo cp deploy/nginx-vunbo.conf /etc/nginx/sites-available/essay-mvp
-sudo ln -sf /etc/nginx/sites-available/essay-mvp /etc/nginx/sites-enabled/
+```bash
+sudo dnf install -y nginx
+sudo cp deploy/nginx-vunbo.conf /etc/nginx/conf.d/essay-mvp.conf
+# api/admin 两张证书放 /etc/nginx/ssl/（见 deploy-alinux4.md 阶段 G）
 sudo nginx -t && sudo systemctl reload nginx
 ```
-
-证书自动续期：`certbot renew`（certbot 安装后通常已有 timer）。
 
 ### 7.5 Nginx 配置摘要
 
@@ -244,6 +230,7 @@ Environment=GIN_MODE=release
 ## 九、相关代码与部署文件
 
 ```
+course_server/deploy/deploy-alinux4.md      # ALinux 4 完整部署（E1 起）
 course_server/deploy/essay-mvp.service      # systemd（生产后端）
 course_server/deploy/nginx-vunbo.conf     # Nginx api + admin
 course_server/config.prod.yaml.example    # 生产 config 模板

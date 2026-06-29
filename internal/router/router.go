@@ -19,8 +19,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// 创建服务器实例
 	h := handler.NewServer(cfg)
 
-	// Day1：健康检查
+	// Day1：健康检查（显式注册 HEAD，供 curl -I / 负载均衡探测）
 	r.GET("/health", h.Health)
+	r.HEAD("/health", h.Health)
 	// 用户上传头像等静态资源（本地开发）
 	r.Static("/uploads", "uploads")
 
