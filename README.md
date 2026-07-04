@@ -11,9 +11,9 @@ Agent 核心规则见 [AGENTS.md](./AGENTS.md)（MVP 边界、开发流程、注
 - Redis 连接占位
 - 管理员登录与 JWT
 - 文章、正文图片、优秀作文、分类、标签、下载资料基础 API
-- 小程序首页、分类、文章、优秀作文、搜索、收藏、历史、下载记录接口骨架
+- 小程序首页、分类、文章、优秀作文、搜索、收藏、历史、下载记录、用户资料、意见反馈接口
 - 免费下载权限校验：`access_type=free` 且标签包含「免费」
-- **Day12**：接口参考文档、Postman 集合、全量自测清单、下载权限边界测试（见 `docs/`）
+- 接口参考文档、Postman 集合、全量自测清单、下载权限边界测试（见 `docs/`）
 
 ## 启动
 
@@ -381,16 +381,17 @@ database.DB.Create(&tag)
 | 文档 | 说明 |
 |---|---|
 | [AGENTS.md](./AGENTS.md) | Agent 核心规则（边界、开发流程、注释） |
-| [docs/api-reference.md](./docs/api-reference.md) | **全量 API 参考**（57 端点） |
+| [docs/README.md](./docs/README.md) | 后端文档入口 |
+| [docs/api-reference.md](./docs/api-reference.md) | 全量 API 参考 |
 | [docs/api-self-test-checklist.md](./docs/api-self-test-checklist.md) | 后端全量自测勾选表 |
 | [docs/download-permission-boundary.md](./docs/download-permission-boundary.md) | 下载权限边界矩阵与手工步骤 |
-| [docs/domain-vunbo.md](./docs/domain-vunbo.md) | **生产域名规范**（api / admin / cdn.vunbo.com） |
-| [docs/oss-setup-guide.md](./docs/oss-setup-guide.md) | **阿里云 OSS 接入指南**（RAM/STS/CORS + 验收步骤） |
-| [docs/oss-upload-backlog.md](./docs/oss-upload-backlog.md) | OSS 待办（小程序头像等 P1 项） |
+| [docs/domain-vunbo.md](./docs/domain-vunbo.md) | 生产域名、微信合法域名、DNS 与证书 |
+| [docs/oss-setup-guide.md](./docs/oss-setup-guide.md) | 阿里云 OSS / STS / CDN 配置与验收 |
 | [docs/postman/](./docs/postman/) | Postman Collection v2.1 + 本地环境 |
-| [prd/001-产品整体结构.md](../prd/001-产品整体结构.md) | 产品整体结构 |
-| [prd/003-技术文档介绍.md](../prd/003-技术文档介绍.md) | 技术方案与接口规范 |
-| [prd/004](../prd/004-开发计划-第一阶段：后端基础与数据模型（Day1-7）.md) ~ [005](../prd/005-开发计划-第二阶段：后端业务接口与统计（Day8-12）.md) | 后端开发计划 |
-| [prd/008](../prd/008-开发计划-第五阶段：联调部署与上线（Day27-28）.md) | **P0 上线接入计划**（OSS / 微信登录 / 部署 / 联调） |
+| [deploy/README.md](./deploy/README.md) | 生产部署与日常发布文档入口 |
+| [prd/001-产品整体结构.md](../prd/001-产品整体结构.md) | 产品整体结构与交付基线 |
+| [prd/002-后台管理系统（内容增长MVP版）.md](../prd/002-后台管理系统（内容增长MVP版）.md) | 后台管理系统交付基线 |
+| [prd/003-技术文档介绍.md](../prd/003-技术文档介绍.md) | 技术架构与接口基线 |
+| [prd/004-二期支付订单登录规划.md](../prd/004-二期支付订单登录规划.md) | 二期支付、订单、登录规划 |
 | [study_doc/](../study_doc/) | Go/Gin 学习笔记（参考，非权威契约） |
 | [Admin/](../Admin/) | 后台管理前端 |
