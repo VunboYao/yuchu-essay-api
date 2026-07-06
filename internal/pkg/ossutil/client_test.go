@@ -52,3 +52,38 @@ func TestPublicURLPrefersCDN(t *testing.T) {
 		t.Fatalf("PublicURL=%q", got)
 	}
 }
+
+func TestNormalizeObjectRef(t *testing.T) {
+	c := ossutil.NewClient(config.OSSConfig{
+		Endpoint:  "oss-cn-hangzhou.aliyuncs.com",
+		Bucket:    "essay-bucket",
+		CDNDomain: "https://cdn.example.com",
+	})
+	if got := c.NormalizeObjectRef("https://cdn.example.com/covers/a.jpg"); got != "covers/a.jpg" {
+		t.Fatalf("NormalizeObjectRef CDN URL=%q", got)
+	}
+	if got := c.NormalizeObjectRef("essay-mvp/covers/a.jpg"); got != "essay-mvp/covers/a.jpg" {
+		t.Fatalf("NormalizeObjectRef key=%q", got)
+	}
+	if ext := "https://other.example/x.jpg"; c.NormalizeObjectRef(ext) != ext {
+		t.Fatalf("NormalizeObjectRef external should be unchanged")
+	}
+}
+
+func TestResolvePublicURL(t *testing.T) {
+	c := ossutil.NewClient(config.OSSConfig{
+		Endpoint:  "oss-cn-hangzhou.aliyuncs.com",
+		Bucket:    "essay-bucket",
+		CDNDomain: "https://cdn.example.com",
+	})
+	if got := c.ResolvePublicURL("covers/a.jpg"); got != "https://cdn.example.com/covers/a.jpg" {
+		t.Fatalf("ResolvePublicURL key=%q", got)
+	}
+	cNoCDN := ossutil.NewClient(config.OSSConfig{
+		Endpoint: "oss-cn-hangzhou.aliyuncs.com",
+		Bucket:   "essay-bucket",
+	})
+	if got := cNoCDN.ResolvePublicURL("covers/a.jpg"); got != "https://essay-bucket.oss-cn-hangzhou.aliyuncs.com/covers/a.jpg" {
+		t.Fatalf("ResolvePublicURL no CDN=%q", got)
+	}
+}

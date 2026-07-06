@@ -20,7 +20,7 @@ type FavoriteListItem struct {
 }
 
 // loadFavoriteListPage 分页查收藏并批量组装展示数据。
-func loadFavoriteListPage(userID uint, page, pageSize int) ([]FavoriteListItem, int64, error) {
+func loadFavoriteListPage(userID uint, page, pageSize int, resolve MediaURLResolver) ([]FavoriteListItem, int64, error) {
 	db := database.DB.Model(&model.Favorite{}).Where("user_id = ?", userID)
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -37,7 +37,7 @@ func loadFavoriteListPage(userID uint, page, pageSize int) ([]FavoriteListItem, 
 	if err != nil {
 		return nil, 0, err
 	}
-	return BuildFavoriteListItems(favs, articles, essays, linkedArticles), total, nil
+	return BuildFavoriteListItems(favs, articles, essays, linkedArticles, resolve), total, nil
 }
 
 func loadFavoriteTargets(db *gorm.DB, favs []model.Favorite) (
@@ -60,10 +60,12 @@ func BuildFavoriteListItems(
 	articles map[uint]model.Article,
 	essays map[uint]model.EssayExample,
 	linkedArticles map[uint]ArticleTitleRef,
+	resolve MediaURLResolver,
 ) []FavoriteListItem {
 	items := make([]FavoriteListItem, 0, len(favs))
 	for _, fav := range favs {
 		available, target := buildContentTarget(fav.TargetType, fav.TargetID, articles, essays, linkedArticles)
+		target = resolveContentArticleTarget(target, resolve)
 		items = append(items, FavoriteListItem{
 			ID:         fav.ID,
 			TargetType: fav.TargetType,

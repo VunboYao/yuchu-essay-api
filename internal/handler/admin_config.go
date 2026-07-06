@@ -22,6 +22,7 @@ func (s *Server) ListHomeBlocks(c *gin.Context) {
 		response.ServerError(c, "failed to list home blocks")
 		return
 	}
+	s.resolveHomeBlocksMedia(list)
 	response.Success(c, list)
 }
 
@@ -36,6 +37,7 @@ func (s *Server) CreateHomeBlock(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	s.applyHomeBlockWriteMedia(&block)
 	if block.SortOrder == 0 {
 		block.SortOrder = model.NextSortOrder(database.DB, &model.HomeBlock{})
 	}
@@ -45,6 +47,7 @@ func (s *Server) CreateHomeBlock(c *gin.Context) {
 	}
 	middleware.SetOpLogRemark(c, "创建首页入口："+block.Title)
 	middleware.SetOpLogTargetID(c, block.ID)
+	s.resolveHomeBlockMedia(&block)
 	response.Success(c, block)
 }
 
@@ -78,6 +81,7 @@ func (s *Server) UpdateHomeBlock(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	s.applyHomeBlockWriteMedia(&block)
 	// 更新记录
 	if err := UpdateAndReload(database.DB, &existing, block.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to update home block")
@@ -85,6 +89,7 @@ func (s *Server) UpdateHomeBlock(c *gin.Context) {
 	}
 	// 设置操作日志
 	middleware.SetOpLogRemark(c, "更新首页入口："+existing.Title)
+	s.resolveHomeBlockMedia(&existing)
 	// 返回成功
 	response.Success(c, existing)
 }
