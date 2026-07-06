@@ -21,7 +21,7 @@ func newEssayPolicy() *bluemonday.Policy {
 	p.AllowElements("p", "br", "strong", "b", "em", "i", "u", "mark", "span")
 	p.AllowAttrs("style").OnElements("p", "span")
 	p.AllowStyles("color", "background-color").OnElements("span")
-	p.AllowStyles("text-indent").OnElements("p")
+	p.AllowStyles("text-indent", "text-align").OnElements("p")
 	return p
 }
 
@@ -31,13 +31,19 @@ func Sanitize(html string) string {
 	return ensureParagraphIndent(clean)
 }
 
+// paragraphAlignSkipsIndent 居中/居右段落不再补两字缩进。
+func paragraphAlignSkipsIndent(style string) bool {
+	compact := strings.ReplaceAll(strings.ToLower(style), " ", "")
+	return strings.Contains(compact, "text-align:center") || strings.Contains(compact, "text-align:right")
+}
+
 // ensureParagraphIndent 为 p 标签补 text-indent:2em，供小程序 rich-text 渲染标准段落缩进。
 func ensureParagraphIndent(html string) string {
 	return paragraphOpenTag.ReplaceAllStringFunc(html, func(tag string) string {
 		parts := paragraphOpenTag.FindStringSubmatch(tag)
 		if len(parts) > 2 && parts[2] != "" {
 			style := parts[2]
-			if strings.Contains(strings.ToLower(style), "text-indent") {
+			if strings.Contains(strings.ToLower(style), "text-indent") || paragraphAlignSkipsIndent(style) {
 				return tag
 			}
 			return `<p style="` + style + `;text-indent:2em">`

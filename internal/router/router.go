@@ -19,8 +19,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// 创建服务器实例
 	h := handler.NewServer(cfg)
 
-	// Day1：健康检查
+	// Day1：健康检查（显式注册 HEAD，供 curl -I / 负载均衡探测）
 	r.GET("/health", h.Health)
+	r.HEAD("/health", h.Health)
 	// 用户上传头像等静态资源（本地开发）
 	r.Static("/uploads", "uploads")
 
@@ -159,7 +160,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 			track.POST("/track/view", h.TrackView)
 			// 分享
 			track.POST("/track/share", h.TrackShare)
-			// 搜索: 在独立搜索接口中实现，这里只记录日志
+			// 搜索埋点（检索走 GET /search，日志仅此一处写入 search_logs）
 			track.POST("/track/search", h.TrackSearch)
 			// 广告
 			track.POST("/track/ad", h.TrackAd)

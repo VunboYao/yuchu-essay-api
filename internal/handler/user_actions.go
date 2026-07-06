@@ -22,7 +22,7 @@ type favoriteRequest struct {
 func (s *Server) ListFavorites(c *gin.Context) {
 	userID := currentAuthID(c)
 	page, pageSize := pageParams(c)
-	list, total, err := loadFavoriteListPage(userID, page, pageSize)
+	list, total, err := loadFavoriteListPage(userID, page, pageSize, s.mediaResolver())
 	if err != nil {
 		response.ServerError(c, "failed to list favorites")
 		return
@@ -153,7 +153,7 @@ func adjustFavoriteCount(tx *gorm.DB, targetType string, targetID uint, delta in
 func (s *Server) History(c *gin.Context) {
 	userID := currentAuthID(c)
 	page, pageSize := pageParams(c)
-	list, total, err := loadHistoryListPage(userID, page, pageSize)
+	list, total, err := loadHistoryListPage(userID, page, pageSize, s.mediaResolver())
 	if err != nil {
 		response.ServerError(c, "failed to list history")
 		return
@@ -164,7 +164,7 @@ func (s *Server) History(c *gin.Context) {
 func (s *Server) Downloads(c *gin.Context) {
 	userID := currentAuthID(c)
 	page, pageSize := pageParams(c)
-	list, total, err := loadDownloadListPage(userID, page, pageSize)
+	list, total, err := loadDownloadListPage(userID, page, pageSize, s.mediaResolver())
 	if err != nil {
 		response.ServerError(c, "failed to list downloads")
 		return

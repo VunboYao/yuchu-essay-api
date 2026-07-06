@@ -17,7 +17,7 @@ type EssayExampleWriteRequest struct {
 	Title     string `json:"title" binding:"required"`
 	Grade     int    `json:"grade" binding:"required"`
 	Body      string `json:"body" binding:"required"`
-	Comment   string `json:"comment" binding:"required"`
+	Comment   string `json:"comment"`
 	SortOrder int    `json:"sortOrder"`
 	Status    *int   `json:"status"`
 	TagIDs    []uint `json:"tagIds"`
@@ -57,6 +57,15 @@ func normalizeEssayHTML(field, value string) (string, error) {
 	return clean, nil
 }
 
+// normalizeOptionalEssayHTML 清洗可选富文本；空内容统一落为空字符串。
+func normalizeOptionalEssayHTML(value string) string {
+	clean := htmlsanitize.Sanitize(strings.TrimSpace(value))
+	if htmlsanitize.IsEffectivelyEmpty(clean) {
+		return ""
+	}
+	return clean
+}
+
 func (r EssayExampleWriteRequest) normalize() (model.EssayExample, error) {
 	title := strings.TrimSpace(r.Title)
 	if title == "" {
@@ -69,10 +78,7 @@ func (r EssayExampleWriteRequest) normalize() (model.EssayExample, error) {
 	if err != nil {
 		return model.EssayExample{}, err
 	}
-	comment, err := normalizeEssayHTML("comment", r.Comment)
-	if err != nil {
-		return model.EssayExample{}, err
-	}
+	comment := normalizeOptionalEssayHTML(r.Comment)
 	return model.EssayExample{
 		ArticleID: resolveOptionalArticleID(r.ArticleID),
 		Title:     title,

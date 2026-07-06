@@ -55,6 +55,7 @@ func (s *Server) CreateDownloadFile(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	s.applyDownloadFileWriteMedia(&file)
 	// 校验归属文章是否存在，避免写入孤儿资料
 	if err := model.CheckDownloadOwnerExists(database.DB, file.OwnerType, file.OwnerID); err != nil {
 		response.BadRequest(c, err.Error())
@@ -91,6 +92,7 @@ func (s *Server) UpdateDownloadFile(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	s.applyDownloadFileWriteMedia(&file)
 	// 校验归属文章是否存在，避免更新孤儿资料
 	if err := model.CheckDownloadOwnerExists(database.DB, file.OwnerType, file.OwnerID); err != nil {
 		response.BadRequest(c, err.Error())

@@ -90,7 +90,7 @@ func (c *Client) IssueSTSCredentials() (*STSCredentials, error) {
 		Expiration:      cred.Expiration,
 		Bucket:          c.cfg.Bucket,
 		Endpoint:        normalizeEndpoint(c.cfg.Endpoint),
-		Region:          region,
+		Region:          ossRegionID(c.cfg.Endpoint),
 		Dir:             prefix,
 		CDNDomain:       strings.TrimSpace(c.cfg.CDNDomain),
 	}, nil
@@ -141,6 +141,42 @@ func (c *Client) ObjectKeyFromURL(fileURL string) (string, bool) {
 	return c.parseObjectKey(fileURL)
 }
 
+// NormalizeObjectRef 入库前规范化：自家 OSS/CDN URL 或裸 key → objectKey；外链原样保留。
+func (c *Client) NormalizeObjectRef(ref string) string {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return ""
+	}
+	if key, ok := c.parseObjectKey(ref); ok {
+		return key
+	}
+	return ref
+}
+
+// NormalizeObjectRefs 批量 NormalizeObjectRef。
+func (c *Client) NormalizeObjectRefs(refs []string) []string {
+	if len(refs) == 0 {
+		return refs
+	}
+	out := make([]string, len(refs))
+	for i, r := range refs {
+		out[i] = c.NormalizeObjectRef(r)
+	}
+	return out
+}
+
+// ResolvePublicURL 读时解析：OSS 引用 → 当前配置的 PublicURL；外链原样返回。
+func (c *Client) ResolvePublicURL(ref string) string {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return ""
+	}
+	if key, ok := c.parseObjectKey(ref); ok {
+		return c.PublicURL(key)
+	}
+	return ref
+}
+
 func (c *Client) parseObjectKey(fileURL string) (string, bool) {
 	fileURL = strings.TrimSpace(fileURL)
 	if fileURL == "" {
@@ -178,7 +214,7 @@ func uploadPolicy(bucket, prefix string) string {
 		"Version": "1",
 		"Statement": []map[string]any{{
 			"Effect":   "Allow",
-			"Action":   []string{"oss:PutObject"},
+			"Action":   []string{"oss:PutObject", "oss:PutObjectAcl"},
 			"Resource": []string{fmt.Sprintf("acs:oss:*:*:%s/%s/*", bucket, prefix)},
 		}},
 	}
@@ -187,12 +223,17 @@ func uploadPolicy(bucket, prefix string) string {
 }
 
 func regionFromEndpoint(endpoint string) string {
+	return strings.TrimPrefix(ossRegionID(endpoint), "oss-")
+}
+
+// ossRegionID 返回 ali-oss / 对外 STS 所需的 region，如 oss-cn-guangzhou。
+func ossRegionID(endpoint string) string {
 	ep := normalizeEndpoint(endpoint)
 	parts := strings.Split(ep, ".")
 	if len(parts) > 0 && strings.HasPrefix(parts[0], "oss-") {
-		return strings.TrimPrefix(parts[0], "oss-")
+		return parts[0]
 	}
-	return "cn-hangzhou"
+	return "oss-cn-guangzhou"
 }
 
 func normalizeEndpoint(endpoint string) string {
