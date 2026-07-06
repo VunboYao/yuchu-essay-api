@@ -47,6 +47,23 @@ func TestEssayExampleValidateForUpdateWordCountFromBody(t *testing.T) {
 	}
 }
 
+func TestEssayExampleValidateAllowsEmptyComment(t *testing.T) {
+	t.Parallel()
+	req := admindto.CreateEssayExampleRequest{
+		Title:   "范文",
+		Grade:   3,
+		Body:    "<p>正文</p>",
+		Comment: "<p><br></p>",
+	}
+	essay, err := req.ValidateForCreate()
+	if err != nil {
+		t.Fatalf("ValidateForCreate: %v", err)
+	}
+	if essay.Comment != "" {
+		t.Fatalf("expected empty comment, got %q", essay.Comment)
+	}
+}
+
 func TestEssayExampleValidateRejectsEmptyHTMLBody(t *testing.T) {
 	t.Parallel()
 	req := admindto.CreateEssayExampleRequest{
