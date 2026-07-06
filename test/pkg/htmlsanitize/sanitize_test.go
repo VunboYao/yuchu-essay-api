@@ -39,6 +39,29 @@ func TestSanitizeAddsParagraphIndent(t *testing.T) {
 	}
 }
 
+func TestSanitizeKeepsTextAlign(t *testing.T) {
+	t.Parallel()
+	in := `<p style="text-align:center">标题</p>`
+	out := htmlsanitize.Sanitize(in)
+	if !strings.Contains(out, "text-align") {
+		t.Fatalf("expected text-align kept, got %q", out)
+	}
+	if strings.Contains(out, "text-indent") {
+		t.Fatalf("expected no text-indent for centered paragraph, got %q", out)
+	}
+}
+
+func TestSanitizeAddsIndentForLeftAlignedParagraph(t *testing.T) {
+	t.Parallel()
+	out := htmlsanitize.Sanitize(`<p style="text-align:left">段一</p>`)
+	if !strings.Contains(out, "text-align") {
+		t.Fatalf("expected text-align kept, got %q", out)
+	}
+	if !strings.Contains(out, `text-indent:2em`) {
+		t.Fatalf("expected indent for left-aligned paragraph, got %q", out)
+	}
+}
+
 func TestStripTags(t *testing.T) {
 	t.Parallel()
 	plain := htmlsanitize.StripTags(`<p>你好 <strong>世界</strong></p>`)
