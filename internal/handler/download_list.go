@@ -37,7 +37,7 @@ type OwnerArticleRef struct {
 	CoverImg string `gorm:"column:cover_img"`
 }
 
-func loadDownloadListPage(userID uint, page, pageSize int) ([]DownloadListItem, int64, error) {
+func loadDownloadListPage(userID uint, page, pageSize int, resolve MediaURLResolver) ([]DownloadListItem, int64, error) {
 	db := database.DB.Model(&model.DownloadLog{}).Where("user_id = ?", userID)
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -54,7 +54,7 @@ func loadDownloadListPage(userID uint, page, pageSize int) ([]DownloadListItem, 
 	if err != nil {
 		return nil, 0, err
 	}
-	return BuildDownloadListItems(logs, files, owners), total, nil
+	return BuildDownloadListItems(logs, files, owners, resolve), total, nil
 }
 
 func loadDownloadTargets(db *gorm.DB, logs []model.DownloadLog) (
@@ -165,6 +165,7 @@ func BuildDownloadListItems(
 	logs []model.DownloadLog,
 	files map[uint]model.DownloadFile,
 	owners map[uint]OwnerArticleRef,
+	resolve MediaURLResolver,
 ) []DownloadListItem {
 	items := make([]DownloadListItem, 0, len(logs))
 	for _, log := range logs {
@@ -192,6 +193,9 @@ func BuildDownloadListItems(
 				if owner, ok := owners[file.OwnerID]; ok {
 					summary.OwnerTitle = owner.Title
 					summary.CoverImg = owner.CoverImg
+					if resolve != nil {
+						summary.CoverImg = resolve(summary.CoverImg)
+					}
 				}
 			}
 			item.Target = summary
