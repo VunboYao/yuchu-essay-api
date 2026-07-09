@@ -247,24 +247,90 @@ func (s *Server) PublicEssayDetail(c *gin.Context) {
 	response.Success(c, resp)
 }
 
-// Search 在已发布文章中检索；搜索埋点由 POST /track/search 写入 search_logs。
+// searchResultLimitPerType 搜索每种内容类型最多返回条数（不分页）。
+const searchResultLimitPerType = 20
+
+// SearchResultItem 搜索混排列表项；targetType 区分文章/优秀作文，供小程序选卡片与跳转。
+type SearchResultItem struct {
+	TargetType    string `json:"targetType"`
+	ID            uint   `json:"id"`
+	Title         string `json:"title"`
+	CoverImg      string `json:"coverImg,omitempty"`
+	Grade         int    `json:"grade"`
+	Semester      string `json:"semester,omitempty"`
+	Unit          int    `json:"unit,omitempty"`
+	Summary       string `json:"summary,omitempty"`
+	IsRecommended bool   `json:"isRecommended,omitempty"`
+	IsHot         bool   `json:"isHot,omitempty"`
+	WordCount     int    `json:"wordCount,omitempty"`
+}
+
+// Search 检索已发布文章与启用中的优秀作文；每类最多 20 条，先文章后作文；埋点仍走 POST /track/search。
 func (s *Server) Search(c *gin.Context) {
 	keyword := strings.TrimSpace(c.Query("keyword"))
 	if keyword == "" {
 		response.BadRequest(c, "keyword is required")
 		return
 	}
-	page, pageSize := pageParams(c)
-	db := articleFilters(database.DB.Model(&model.Article{}), c).
+	like := "%" + keyword + "%"
+
+	// 文章：标题 / 作文题目 / 摘要
+	var articles []model.Article
+	if err := articleFilters(database.DB.Model(&model.Article{}), c).
 		Where("status = ?", model.ArticleStatusPublished).
-		Where("title LIKE ? OR essay_topic LIKE ? OR summary LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
-	var total int64
-	db.Count(&total)
-	var list []model.Article
-	if err := paginate(db.Omit("body_images").Order("view_count DESC, id DESC"), page, pageSize).Find(&list).Error; err != nil {
+		Where("title LIKE ? OR essay_topic LIKE ? OR summary LIKE ?", like, like, like).
+		Omit("body_images").
+		Order("view_count DESC, id DESC").
+		Limit(searchResultLimitPerType).
+		Find(&articles).Error; err != nil {
 		response.ServerError(c, "failed to search")
 		return
 	}
-	s.resolveArticlesMedia(list)
-	response.Page(c, list, total, page, pageSize)
+	s.resolveArticlesMedia(articles)
+
+	// 作文：标题 / 正文匹配，但不 Select body，避免把 longtext 打进列表
+	var essays []model.EssayExample
+	if err := database.DB.Model(&model.EssayExample{}).
+		Select("id", "article_id", "title", "grade", "word_count", "status", "sort_order", "view_count", "favorite_count", "created_at", "updated_at").
+		Where("status = ?", model.StatusEnabled).
+		Where("title LIKE ? OR body LIKE ?", like, like).
+		Order("view_count DESC, id DESC").
+		Limit(searchResultLimitPerType).
+		Find(&essays).Error; err != nil {
+		response.ServerError(c, "failed to search")
+		return
+	}
+
+	list := BuildSearchResultList(articles, essays)
+	total := int64(len(list))
+	response.Page(c, list, total, 1, int(total))
+}
+
+// BuildSearchResultList 先文章后作文，映射为统一搜索卡片字段。
+func BuildSearchResultList(articles []model.Article, essays []model.EssayExample) []SearchResultItem {
+	list := make([]SearchResultItem, 0, len(articles)+len(essays))
+	for _, a := range articles {
+		list = append(list, SearchResultItem{
+			TargetType:    model.TargetTypeArticle,
+			ID:            a.ID,
+			Title:         a.Title,
+			CoverImg:      a.CoverImg,
+			Grade:         a.Grade,
+			Semester:      a.Semester,
+			Unit:          a.Unit,
+			Summary:       a.Summary,
+			IsRecommended: a.IsRecommended,
+			IsHot:         a.IsHot,
+		})
+	}
+	for _, e := range essays {
+		list = append(list, SearchResultItem{
+			TargetType: model.TargetTypeEssay,
+			ID:         e.ID,
+			Title:      e.Title,
+			Grade:      e.Grade,
+			WordCount:  e.WordCount,
+		})
+	}
+	return list
 }
