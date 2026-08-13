@@ -393,5 +393,5 @@ database.DB.Create(&tag)
 | [prd/002-后台管理系统（内容增长MVP版）.md](../prd/002-后台管理系统（内容增长MVP版）.md) | 后台管理系统交付基线 |
 | [prd/003-技术文档介绍.md](../prd/003-技术文档介绍.md) | 技术架构与接口基线 |
 | [prd/004-二期支付订单登录规划.md](../prd/004-二期支付订单登录规划.md) | 二期支付、订单、登录规划 |
-| [study_doc/](../study_doc/) | Go/Gin 学习笔记（参考，非权威契约） |
+| [study_doc/golang/](../study_doc/golang/) | Go/Gin 学习笔记（参考，非权威契约） |
 | [Admin/](../Admin/) | 后台管理前端 |
