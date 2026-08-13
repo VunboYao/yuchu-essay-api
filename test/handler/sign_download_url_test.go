@@ -35,13 +35,25 @@ func seedFreeDownloadFile(t *testing.T, db *gorm.DB, overrides func(*model.Downl
 		FileType:   "pdf",
 		FileURL:    "https://oss.example.com/test.pdf",
 		Status:     model.StatusEnabled,
+		NeedLogin:  false,
 	}
 	if overrides != nil {
 		overrides(&file)
 	}
+	needLogin := file.NeedLogin
+	status := file.Status
 	if err := db.Create(&file).Error; err != nil {
 		t.Fatalf("seed file: %v", err)
 	}
+	// Create 会把 default:true 回写到 NeedLogin，须用创建前的值强制落库
+	if err := db.Model(&file).Updates(map[string]interface{}{
+		"need_login": needLogin,
+		"status":     status,
+	}).Error; err != nil {
+		t.Fatalf("seed file flags: %v", err)
+	}
+	file.NeedLogin = needLogin
+	file.Status = status
 	return file
 }
 

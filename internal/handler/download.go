@@ -9,11 +9,10 @@ import (
 	admindto "course_server/internal/dto/admin"
 	"course_server/internal/middleware"
 	"course_server/internal/model"
-	"course_server/internal/pkg/adunlock"
 	"course_server/internal/pkg/response"
+	"course_server/internal/service/download"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func (s *Server) ListDownloadFiles(c *gin.Context) {
@@ -132,137 +131,76 @@ func (s *Server) DeleteDownloadFile(c *gin.Context) {
 	response.Success(c, gin.H{"id": id})
 }
 
-// SignDownloadURL 下发免费资料下载地址（公开接口，登录可选记录 user_id）。
-// 须同时满足：status=启用、access_type=free、tags 含「免费」；否则 403。
-// 下载激励视频门槛启用时须携带有效 unlockToken（见 POST ad-unlock）。
-// 成功时事务写入 download_logs 并递增 download_count（owner_type=article 时同步文章计数）。
+// SignDownloadURL 下发免费资料下载地址；业务规则在 download.Service。
 func (s *Server) SignDownloadURL(c *gin.Context) {
 	id, err := pathID(c)
 	if err != nil {
 		response.BadRequest(c, "invalid id")
 		return
 	}
-	var file model.DownloadFile
-	if err := database.DB.First(&file, id).Error; err != nil {
-		response.NotFound(c, "download file not found")
-		return
-	}
-	if !model.IsPublicFreeDownload(file) {
-		response.Forbidden(c, "download file is not free")
-		return
-	}
-	gate, gateErr := loadDownloadGate()
-	if gateErr != nil {
-		response.ServerError(c, "failed to check download gate")
-		return
-	}
-	if gate.IsDownloadGateActive() {
-		unlockToken := strings.TrimSpace(c.Query("unlockToken"))
-		if unlockToken == "" {
-			response.Forbidden(c, "rewarded video required")
-			return
-		}
-		if _, err := adunlock.Verify(s.Config.JWT.Secret, unlockToken, file.ID); err != nil {
-			response.Forbidden(c, "invalid or expired unlock token")
-			return
-		}
-	}
-	userID := currentAuthID(c)
-	err = database.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&model.DownloadLog{
-			UserID:      userID,
-			FileID:      file.ID,
-			OwnerType:   file.OwnerType,
-			OwnerID:     file.OwnerID,
-			AccessType:  file.AccessType,
-			SourceScene: c.Query("sourceScene"),
-		}).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&file).UpdateColumn("download_count", gorm.Expr("download_count + ?", 1)).Error; err != nil {
-			return err
-		}
-		if file.OwnerType == "article" {
-			if err := tx.Model(&model.Article{}).Where("id = ?", file.OwnerID).UpdateColumn("download_count", gorm.Expr("download_count + ?", 1)).Error; err != nil {
-				return err
-			}
-		}
-		return nil
+	out, err := s.Download.SignDownloadURL(c.Request.Context(), download.SignInput{
+		FileID:      uint(id),
+		UserID:      currentAuthID(c),
+		UnlockToken: strings.TrimSpace(c.Query("unlockToken")),
+		SourceScene: c.Query("sourceScene"),
 	})
 	if err != nil {
-		response.ServerError(c, "failed to record download")
+		writeDownloadErr(c, err, "failed to record download")
 		return
 	}
-
 	response.Success(c, gin.H{
-		"url":       s.OSS.SignDownloadURL(file.FileURL, 300),
-		"expiresIn": 300,
-		"file":      file,
+		"url":       out.URL,
+		"expiresIn": out.ExpiresIn,
+		"file":      out.File,
 	})
 }
 
 // UnlockDownloadAd 激励视频看完后签发短时 unlockToken，供 sign-url 校验。
 func (s *Server) UnlockDownloadAd(c *gin.Context) {
-	// 1. 获取文件 ID
 	id, err := pathID(c)
 	if err != nil {
 		response.BadRequest(c, "invalid id")
 		return
 	}
-	// 2. 获取文件
-	var file model.DownloadFile
-	if err := database.DB.First(&file, id).Error; err != nil {
-		response.NotFound(c, "download file not found")
-		return
-	}
-	// 3. 校验文件是否免费
-	if !model.IsPublicFreeDownload(file) {
-		response.Forbidden(c, "download file is not free")
-		return
-	}
-	// 4. 加载下载激励视频配置
-	gate, gateErr := loadDownloadGate()
-	if gateErr != nil {
-		response.ServerError(c, "failed to check download gate")
-		return
-	}
-	// 5. 校验下载激励视频配置是否启用
-	if !gate.IsDownloadGateActive() {
-		response.BadRequest(c, "download rewarded video gate is not enabled")
-		return
-	}
-	// 6. 获取用户ID
-	userID := currentAuthID(c)
-	pagePath := strings.TrimSpace(c.Query("pagePath"))
-	// 7. 记录激励视频完成事件
-	if err := database.DB.Create(&model.AdEvent{
-		UserID:     userID,
-		SlotKey:    gate.SlotKey,
-		EventType:  model.AdEventRewardedComplete,
-		PagePath:   pagePath,
-		TargetType: model.TargetTypeDownloadFile,
-		TargetID:   file.ID,
-	}).Error; err != nil {
-		response.ServerError(c, "failed to record ad unlock")
-		return
-	}
-	// 8. 签发解锁 token
-	token, expiresIn, err := adunlock.Sign(s.Config.JWT.Secret, s.Config.JWT.Issuer, file.ID, userID, gate.SlotKey)
+	out, err := s.Download.UnlockDownloadAd(c.Request.Context(), download.UnlockInput{
+		FileID:   uint(id),
+		UserID:   currentAuthID(c),
+		PagePath: strings.TrimSpace(c.Query("pagePath")),
+	})
 	if err != nil {
-		response.ServerError(c, "failed to issue unlock token")
+		writeDownloadErr(c, err, "failed to record ad unlock")
 		return
 	}
 	response.Success(c, gin.H{
-		"unlockToken": token,
-		"expiresIn":   expiresIn,
+		"unlockToken": out.UnlockToken,
+		"expiresIn":   out.ExpiresIn,
 	})
 }
 
-// loadDownloadGate 读取全局下载激励视频配置；记录不存在时返回零值（门槛不生效）。
-func loadDownloadGate() (model.AdSlot, error) {
-	slot, err := model.FindDownloadGateSlot(database.DB)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return model.AdSlot{}, nil
+// writeDownloadErr 将 service sentinel 映射为稳定对外文案；未知错误用 fallback，不拼 err.Error()。
+func writeDownloadErr(c *gin.Context, err error, fallback500 string) {
+	switch {
+	case errors.Is(err, download.ErrNotFound):
+		response.NotFound(c, download.ErrNotFound.Error())
+	case errors.Is(err, download.ErrNotFree):
+		response.Forbidden(c, download.ErrNotFree.Error())
+	case errors.Is(err, download.ErrLoginRequired):
+		response.Unauthorized(c, download.ErrLoginRequired.Error())
+	case errors.Is(err, download.ErrRewardedVideoRequired):
+		response.Forbidden(c, download.ErrRewardedVideoRequired.Error())
+	case errors.Is(err, download.ErrInvalidUnlockToken):
+		response.Forbidden(c, download.ErrInvalidUnlockToken.Error())
+	case errors.Is(err, download.ErrGateNotEnabled):
+		response.BadRequest(c, download.ErrGateNotEnabled.Error())
+	case errors.Is(err, download.ErrGateCheck):
+		response.ServerError(c, download.ErrGateCheck.Error())
+	case errors.Is(err, download.ErrRecordDownload):
+		response.ServerError(c, download.ErrRecordDownload.Error())
+	case errors.Is(err, download.ErrRecordAdUnlock):
+		response.ServerError(c, download.ErrRecordAdUnlock.Error())
+	case errors.Is(err, download.ErrIssueToken):
+		response.ServerError(c, download.ErrIssueToken.Error())
+	default:
+		response.ServerError(c, fallback500)
 	}
-	return slot, err
 }
