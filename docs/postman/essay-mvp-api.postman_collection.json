@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Essay MVP API",
-    "description": "内容型作文小程序 MVP 一期后端接口（57 端点）。导入后请先执行 Admin Login 与 Wx Login。",
+    "description": "内容型作文小程序 MVP 一期后端接口（71 端点）。导入后请先执行 Admin Login 与 Wx Login。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -21,6 +21,15 @@
             "header": [],
             "url": "{{baseUrl}}/health",
             "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Health HEAD",
+          "request": {
+            "method": "HEAD",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "负载均衡或 curl -I 探测。详见 course_server/docs/api-reference.md"
           }
         }
       ]
@@ -150,6 +159,48 @@
       }
     },
     {
+      "name": "04b Admin 意见反馈",
+      "item": [
+        {
+          "name": "List Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/feedbacks?page=1&pageSize=20",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Reply Feedback",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/feedbacks/1/reply",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reply\": \"感谢反馈，已记录。\"\n}"
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
       "name": "05 Admin 分类单元",
       "item": [
         {
@@ -195,6 +246,15 @@
               "mode": "raw",
               "raw": "{\n  \"textbookVersion\": \"统编版\",\n  \"grade\": 3,\n  \"semester\": \"上册\",\n  \"unit\": 1,\n  \"unitTitle\": \"第一单元（更新）\",\n  \"status\": 1\n}"
             }
+          }
+        },
+        {
+          "name": "Delete Taxonomy Unit",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/taxonomy-units/1",
+            "description": "须已禁用且无文章占用同一四元组。详见 course_server/docs/api-reference.md"
           }
         }
       ],
@@ -255,6 +315,15 @@
               "mode": "raw",
               "raw": "{\n  \"name\": \"免费\",\n  \"sortOrder\": 1,\n  \"status\": 1\n}"
             }
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/tags/1",
+            "description": "须已禁用且无内容关联。详见 course_server/docs/api-reference.md"
           }
         }
       ],
@@ -582,6 +651,15 @@
           }
         },
         {
+          "name": "Delete Home Block",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/home-blocks/1",
+            "description": "须已禁用。详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
           "name": "List Ad Slots",
           "request": {
             "method": "GET",
@@ -609,6 +687,15 @@
           }
         },
         {
+          "name": "Delete Ad Slot",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/ad-slots/1",
+            "description": "须已禁用。详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
           "name": "List Official Account Configs",
           "request": {
             "method": "GET",
@@ -633,6 +720,15 @@
               "mode": "raw",
               "raw": "{\n  \"scene\": \"article_detail\",\n  \"title\": \"关注公众号\",\n  \"status\": 1\n}"
             }
+          }
+        },
+        {
+          "name": "Delete Official Account Config",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/official-account-configs/1",
+            "description": "须已禁用。详见 course_server/docs/api-reference.md"
           }
         },
         {
@@ -778,6 +874,15 @@
             "header": [],
             "url": "{{baseUrl}}/api/v1/ad-slots?page=home",
             "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Public Official Account Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/official-account-configs?scene=mine",
+            "description": "须传 scene。详见 course_server/docs/api-reference.md"
           }
         }
       ]
@@ -969,6 +1074,80 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/api/v1/downloads",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/user/profile",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/user/profile",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"测试用户\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload User Avatar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/user/avatar",
+            "description": "form-data 字段 file，jpeg/png，不超过 2MB。详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "jpeg 或 png"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/feedbacks",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"希望增加四年级下册范文\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List User Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/feedbacks",
             "description": "详见 course_server/docs/api-reference.md"
           }
         }

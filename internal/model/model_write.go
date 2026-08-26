@@ -111,6 +111,31 @@ func CheckTaxonomyUnitDuplicate(db *gorm.DB, unit TaxonomyUnit, excludeID uint) 
 	return nil
 }
 
+// CountTaxonomyUnitArticleUsage 统计占用同一教材版本/年级/学期/单元的文章数。
+func CountTaxonomyUnitArticleUsage(db *gorm.DB, unit TaxonomyUnit) (int64, error) {
+	var count int64
+	err := db.Model(&Article{}).Where(
+		"textbook_version = ? AND grade = ? AND semester = ? AND unit = ?",
+		unit.TextbookVersion, unit.Grade, unit.Semester, unit.Unit,
+	).Count(&count).Error
+	return count, err
+}
+
+// CheckTaxonomyUnitDeletable 物理删除前校验：须已禁用且无文章占用同一四元组。
+func CheckTaxonomyUnitDeletable(db *gorm.DB, unit TaxonomyUnit) error {
+	if unit.Status != StatusDisabled {
+		return fmt.Errorf("仅已禁用的分类单元可删除，请先将分类单元禁用")
+	}
+	count, err := CountTaxonomyUnitArticleUsage(db, unit)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("该分类单元仍被 %d 篇文章使用，请先调整对应文章的年级/册次/单元后再删除", count)
+	}
+	return nil
+}
+
 // --- Article ---
 
 // UpdateMap 返回 GORM Updates 用的字段 map（支持零值写入；不含 publishedAt 与计数）。

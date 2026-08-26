@@ -42,6 +42,7 @@
 | 12 | 分类 | GET | `/admin/api/v1/taxonomy-units` | Admin | 登录 | 分页列表 | [ ] |
 | 13 | 分类 | POST | `/admin/api/v1/taxonomy-units` | Admin | 登录 | 创建成功，记下 `unitId` | [ ] |
 | 14 | 分类 | PUT | `/admin/api/v1/taxonomy-units/:id` | Admin | #13 | 更新成功 | [ ] |
+| 14b | 分类 | DELETE | `/admin/api/v1/taxonomy-units/:id` | Admin | 已禁用且无文章占用 | 删除成功或约束报错符合预期 | [ ] |
 | 15 | 标签 | GET | `/admin/api/v1/tags` | Admin | 登录 | 分页列表 | [ ] |
 | 16 | 标签 | POST | `/admin/api/v1/tags` | Admin | 登录 | 创建「免费」标签 | [ ] |
 | 17 | 标签 | PUT | `/admin/api/v1/tags/:id` | Admin | #16 | 更新成功 | [ ] |
@@ -88,7 +89,7 @@
 |---|---|---|---|---|---|---|---|
 | 44 | 登录 | POST | `/api/v1/wx/login` | 无 | 微信 code 或开发 code | 返回 `token`、`user` | [ ] |
 | 45 | 首页 | GET | `/api/v1/home` | 无 | #23,#25,#34 | 含 `recommendedArticles`、`hotArticles`、`essayExamples`、`homeBlocks` | [ ] |
-| 46 | 分类 | GET | `/api/v1/categories` | 无 | #13 | 返回分类树 | [ ] |
+| 46 | 分类 | GET | `/api/v1/categories` | 无 | #13 | 返回启用中的分类单元扁平列表 | [ ] |
 | 47 | 文章 | GET | `/api/v1/articles` | 无 | #23 | 仅返回已发布文章 | [ ] |
 | 48 | 文章 | GET | `/api/v1/articles/:id` | 无 | #23 | 详情可读，`view_count` 递增 | [ ] |
 | 49 | 范文 | GET | `/api/v1/essays` | 无 | #25 | 返回列表 | [ ] |

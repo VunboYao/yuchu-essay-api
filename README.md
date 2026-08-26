@@ -346,7 +346,7 @@ database.DB.Create(&tag)
 | 模块 | Handler | Request 文件 |
 |------|---------|--------------|
 | 标签 | `CreateTag` / `UpdateTag` | `dto/admin/tag.go` |
-| 分类单元 | `CreateTaxonomyUnit` / `UpdateTaxonomyUnit` | `dto/admin/taxonomy_unit.go` |
+| 分类单元 | `CreateTaxonomyUnit` / `UpdateTaxonomyUnit` / `DeleteTaxonomyUnit` | `dto/admin/taxonomy_unit.go` |
 | 作文专题 | `CreateArticle` / `UpdateArticle` | `dto/admin/article.go` |
 | 下载资料 | `CreateDownloadFile` / `UpdateDownloadFile` | `dto/admin/download_file.go` |
 | 优秀作文 | `CreateEssayExample` / `UpdateEssayExample` | `dto/admin/essay_example.go` |

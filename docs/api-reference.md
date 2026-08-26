@@ -1,7 +1,7 @@
 # API 参考文档
 
 > 路由唯一事实来源：[`internal/router/router.go`](../internal/router/router.go)。
-> 当前文档覆盖：健康检查 2 个 HTTP 方法、后台 Admin 41 个接口、小程序 26 个接口。
+> 当前文档覆盖：健康检查 2 个 HTTP 方法、后台 Admin 42 个接口、小程序 27 个接口。
 
 ## 一、通用约定
 
@@ -105,6 +105,7 @@ Authorization: Bearer <token>
 | GET | `/taxonomy-units` | 分类列表；支持分页和筛选 |
 | POST | `/taxonomy-units` | 创建分类 |
 | PUT | `/taxonomy-units/:id` | 更新分类 |
+| DELETE | `/taxonomy-units/:id` | 删除分类；须已禁用且无文章占用同一四元组 |
 
 创建/更新关键字段：
 
@@ -253,7 +254,7 @@ Authorization: Bearer <token>
 | Method | Path | 鉴权 | 说明 |
 |---|---|---|---|
 | GET | `/home` | 无 | 首页聚合：推荐、热门、优秀作文、首页入口 |
-| GET | `/categories` | 无 | 分类树 |
+| GET | `/categories` | 无 | 启用中的分类单元扁平列表 |
 | GET | `/articles` | 无 | 已发布文章列表 |
 | GET | `/articles/:id` | 无 | 已发布文章详情；递增阅读数 |
 | GET | `/essays` | 无 | 优秀作文列表 |

@@ -55,6 +55,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.POST("/taxonomy-units", h.CreateTaxonomyUnit)
 		// 教材分类单元: 更新
 		protectedAdmin.PUT("/taxonomy-units/:id", h.UpdateTaxonomyUnit)
+		// 教材分类单元: 删除（须已禁用且无文章占用）
+		protectedAdmin.DELETE("/taxonomy-units/:id", h.DeleteTaxonomyUnit)
 
 		// 标签: 查询
 		protectedAdmin.GET("/tags", h.ListTags)

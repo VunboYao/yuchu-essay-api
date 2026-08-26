@@ -119,6 +119,30 @@ func (s *Server) UpdateTaxonomyUnit(c *gin.Context) {
 	response.Success(c, item)
 }
 
+// DeleteTaxonomyUnit 物理删除教材分类单元；须已禁用且无文章占用同一四元组。
+func (s *Server) DeleteTaxonomyUnit(c *gin.Context) {
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	var item model.TaxonomyUnit
+	if err := database.DB.First(&item, id).Error; err != nil {
+		response.NotFound(c, "taxonomy unit not found")
+		return
+	}
+	if err := model.CheckTaxonomyUnitDeletable(database.DB, item); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := database.DB.Delete(&item).Error; err != nil {
+		response.ServerError(c, "failed to delete taxonomy unit")
+		return
+	}
+	middleware.SetOpLogRemark(c, "删除分类单元："+taxonomyUnitLabel(item))
+	response.Success(c, gin.H{"id": id})
+}
+
 // 标签: 列表查询
 func (s *Server) ListTags(c *gin.Context) {
 	// 分页参数
