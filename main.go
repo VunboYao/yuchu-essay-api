@@ -34,15 +34,12 @@ func main() {
 	if err := database.AutoMigrate(); err != nil {
 		log.Fatalf("auto migrate: %v", err)
 	}
-	// 6. 种子数据：默认管理员、一期固定广告位、搜索热门词
+	// 6. 种子数据：默认管理员与一期固定广告位（搜索热门词不预置，由后台自行添加）
 	if err := database.SeedAdmin(); err != nil {
 		log.Fatalf("seed admin: %v", err)
 	}
 	if err := database.SeedAdSlots(); err != nil {
 		log.Fatalf("seed ad slots: %v", err)
-	}
-	if err := database.SeedHotSearchKeywords(); err != nil {
-		log.Fatalf("seed hot search keywords: %v", err)
 	}
 
 	// 7. 启动 HTTP 服务
