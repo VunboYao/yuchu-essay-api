@@ -62,6 +62,35 @@ func TestSanitizeAddsIndentForLeftAlignedParagraph(t *testing.T) {
 	}
 }
 
+func TestSanitizeKeepsZeroIndent(t *testing.T) {
+	t.Parallel()
+	for _, in := range []string{
+		`<p style="text-indent:0">亲爱的老师：</p><p>正文</p>`,
+		`<p style="text-indent:0em">亲爱的老师：</p><p>正文</p>`,
+	} {
+		out := htmlsanitize.Sanitize(in)
+		idx := strings.Index(out, "亲爱的老师")
+		if idx < 0 {
+			t.Fatalf("expected greeting kept, got %q", out)
+		}
+		open := strings.LastIndex(out[:idx], "<p")
+		gt := strings.Index(out[open:], ">")
+		if open < 0 || gt < 0 {
+			t.Fatalf("expected opening p tag before greeting, got %q", out)
+		}
+		tag := out[open : open+gt+1]
+		if strings.Contains(tag, "2em") {
+			t.Fatalf("greeting paragraph should keep zero indent, tag=%q html=%q", tag, out)
+		}
+		if !strings.Contains(strings.ToLower(tag), "text-indent") {
+			t.Fatalf("greeting paragraph should keep text-indent:0, tag=%q html=%q", tag, out)
+		}
+		if !strings.Contains(out, `text-indent:2em`) {
+			t.Fatalf("expected following paragraph still indented, got %q", out)
+		}
+	}
+}
+
 func TestStripTags(t *testing.T) {
 	t.Parallel()
 	plain := htmlsanitize.StripTags(`<p>你好 <strong>世界</strong></p>`)

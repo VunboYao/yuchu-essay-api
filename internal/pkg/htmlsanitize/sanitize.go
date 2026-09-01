@@ -43,6 +43,7 @@ func ensureParagraphIndent(html string) string {
 		parts := paragraphOpenTag.FindStringSubmatch(tag)
 		if len(parts) > 2 && parts[2] != "" {
 			style := parts[2]
+			// 已有 text-indent（含 0 / 0em，写信称谓顶格）或居中/居右则不覆盖
 			if strings.Contains(strings.ToLower(style), "text-indent") || paragraphAlignSkipsIndent(style) {
 				return tag
 			}
