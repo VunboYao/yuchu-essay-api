@@ -282,6 +282,16 @@ type HomeBlock struct {
 	UpdatedAt jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
 }
 
+// HotSearchKeyword 搜索页运营热门词（后台配置，与 search_logs 统计无关）。
+type HotSearchKeyword struct {
+	ID        uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
+	Keyword   string        `gorm:"size:40;uniqueIndex;not null;comment:热门搜索词" json:"keyword"`
+	SortOrder int           `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
+	Status    int           `gorm:"index;not null;default:1;comment:状态 0禁用 1启用" json:"status"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
+}
+
 // OfficialAccountConfig 公众号导流配置。
 type OfficialAccountConfig struct {
 	ID          uint          `gorm:"primaryKey;comment:主键ID" json:"id"`

@@ -23,6 +23,7 @@ func AutoMigrate() error {
 		&model.DownloadFile{},
 		&model.AdSlot{},
 		&model.HomeBlock{},
+		&model.HotSearchKeyword{},
 		&model.OfficialAccountConfig{},
 		// 【后台】
 		&model.Admin{},

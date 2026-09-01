@@ -106,6 +106,14 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.PUT("/home-blocks/:id", h.UpdateHomeBlock)
 		// 首页入口: 删除（须已禁用）
 		protectedAdmin.DELETE("/home-blocks/:id", h.DeleteHomeBlock)
+		// 搜索热门词: 查询
+		protectedAdmin.GET("/hot-search-keywords", h.ListHotSearchKeywords)
+		// 搜索热门词: 创建
+		protectedAdmin.POST("/hot-search-keywords", h.CreateHotSearchKeyword)
+		// 搜索热门词: 更新
+		protectedAdmin.PUT("/hot-search-keywords/:id", h.UpdateHotSearchKeyword)
+		// 搜索热门词: 删除（须已禁用）
+		protectedAdmin.DELETE("/hot-search-keywords/:id", h.DeleteHotSearchKeyword)
 		// 广告位: 列表查询
 		protectedAdmin.GET("/ad-slots", h.ListAdSlots)
 		// 广告位: 创建或更新
@@ -141,6 +149,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 		api.GET("/essays/:id", h.PublicEssayDetail)
 		// 搜索
 		api.GET("/search", h.Search)
+		// 搜索热门词（仅返回启用项的 keyword 列表）
+		api.GET("/hot-search-keywords", h.PublicHotSearchKeywords)
 		// 广告位配置（仅返回启用项，可选 ?page= 过滤）
 		api.GET("/ad-slots", h.PublicAdSlots)
 		// 公众号导流配置（仅返回启用项，须传 ?scene=）

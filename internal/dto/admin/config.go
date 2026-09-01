@@ -4,6 +4,7 @@ package admin
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"course_server/internal/dto"
 	"course_server/internal/model"
@@ -92,6 +93,63 @@ func (r HomeBlockWriteRequest) ValidateForUpdate(existing model.HomeBlock) (mode
 	}
 	block.Status = status
 	return block, nil
+}
+
+const maxHotSearchKeywordRunes = 40
+
+// HotSearchKeywordWriteRequest 搜索热门词创建/更新共用入参。
+type HotSearchKeywordWriteRequest struct {
+	Keyword   string `json:"keyword" binding:"required"`
+	SortOrder int    `json:"sortOrder"`
+	Status    *int   `json:"status"`
+}
+
+// CreateHotSearchKeywordRequest 创建搜索热门词。
+type CreateHotSearchKeywordRequest = HotSearchKeywordWriteRequest
+
+// UpdateHotSearchKeywordRequest 更新搜索热门词。
+type UpdateHotSearchKeywordRequest = HotSearchKeywordWriteRequest
+
+func (r HotSearchKeywordWriteRequest) normalize() (model.HotSearchKeyword, error) {
+	keyword := strings.TrimSpace(r.Keyword)
+	if keyword == "" {
+		return model.HotSearchKeyword{}, fmt.Errorf("keyword is required")
+	}
+	if utf8.RuneCountInString(keyword) > maxHotSearchKeywordRunes {
+		return model.HotSearchKeyword{}, fmt.Errorf("keyword exceeds max %d", maxHotSearchKeywordRunes)
+	}
+	return model.HotSearchKeyword{
+		Keyword:   keyword,
+		SortOrder: r.SortOrder,
+	}, nil
+}
+
+// ValidateForCreate 校验创建入参；status 未传时默认启用。
+func (r HotSearchKeywordWriteRequest) ValidateForCreate() (model.HotSearchKeyword, error) {
+	item, err := r.normalize()
+	if err != nil {
+		return model.HotSearchKeyword{}, err
+	}
+	status, err := dto.ResolveStatus(r.Status, model.StatusEnabled)
+	if err != nil {
+		return model.HotSearchKeyword{}, err
+	}
+	item.Status = status
+	return item, nil
+}
+
+// ValidateForUpdate 校验更新入参；status 未传时保留 existing 原值。
+func (r HotSearchKeywordWriteRequest) ValidateForUpdate(existing model.HotSearchKeyword) (model.HotSearchKeyword, error) {
+	item, err := r.normalize()
+	if err != nil {
+		return model.HotSearchKeyword{}, err
+	}
+	status, err := dto.ResolveStatus(r.Status, existing.Status)
+	if err != nil {
+		return model.HotSearchKeyword{}, err
+	}
+	item.Status = status
+	return item, nil
 }
 
 // UpsertAdSlotRequest 广告位 upsert 入参（按 slotKey 匹配已有记录）。

@@ -349,6 +349,45 @@ func CheckHomeBlockDeletable(block HomeBlock) error {
 	return nil
 }
 
+func (k HotSearchKeyword) UpdateMap() map[string]interface{} {
+	return map[string]interface{}{
+		"keyword":    k.Keyword,
+		"sort_order": k.SortOrder,
+		"status":     k.Status,
+	}
+}
+
+// FindHotSearchKeywordByID 按 id 查找搜索热门词；不存在时返回 gorm.ErrRecordNotFound。
+func FindHotSearchKeywordByID(db *gorm.DB, id uint) (HotSearchKeyword, error) {
+	var item HotSearchKeyword
+	err := db.First(&item, id).Error
+	return item, err
+}
+
+// CheckHotSearchKeywordDuplicate 检查 keyword 是否与其他记录冲突。
+func CheckHotSearchKeywordDuplicate(db *gorm.DB, keyword string, excludeID uint) error {
+	q := db.Model(&HotSearchKeyword{}).Where("keyword = ?", keyword)
+	if excludeID > 0 {
+		q = q.Where("id != ?", excludeID)
+	}
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("hot search keyword already exists")
+	}
+	return nil
+}
+
+// CheckHotSearchKeywordDeletable 物理删除前校验：须已禁用（启用中不可删，须先禁用）。
+func CheckHotSearchKeywordDeletable(item HotSearchKeyword) error {
+	if item.Status != StatusDisabled {
+		return fmt.Errorf("仅已禁用的搜索热门词可删除，请先将热门词禁用")
+	}
+	return nil
+}
+
 func (s AdSlot) UpdateMap() map[string]interface{} {
 	return map[string]interface{}{
 		"slot_key":   s.SlotKey,

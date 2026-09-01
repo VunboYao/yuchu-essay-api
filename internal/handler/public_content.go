@@ -71,6 +71,22 @@ func (s *Server) PublicAdSlots(c *gin.Context) {
 	response.Success(c, list)
 }
 
+// PublicHotSearchKeywords 返回启用中的搜索热门词（仅 keyword 字符串，按 sort_order DESC）。
+func (s *Server) PublicHotSearchKeywords(c *gin.Context) {
+	var list []model.HotSearchKeyword
+	if err := database.DB.Where("status = ?", model.StatusEnabled).
+		Order("sort_order DESC, id DESC").
+		Find(&list).Error; err != nil {
+		response.ServerError(c, "failed to list hot search keywords")
+		return
+	}
+	keywords := make([]string, 0, len(list))
+	for _, item := range list {
+		keywords = append(keywords, item.Keyword)
+	}
+	response.Success(c, keywords)
+}
+
 // PublicOfficialAccountConfig 返回指定 scene 下启用中的公众号导流配置，供小程序展示关注引导。
 func (s *Server) PublicOfficialAccountConfig(c *gin.Context) {
 	scene := strings.TrimSpace(c.Query("scene"))

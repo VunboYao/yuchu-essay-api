@@ -660,6 +660,60 @@
           }
         },
         {
+          "name": "List Hot Search Keywords",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/hot-search-keywords",
+            "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Create Hot Search Keyword",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/hot-search-keywords",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keyword\": \"写人作文\",\n  \"sortOrder\": 10,\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Hot Search Keyword",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/api/v1/hot-search-keywords/1",
+            "description": "详见 course_server/docs/api-reference.md",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keyword\": \"写人作文\",\n  \"sortOrder\": 20,\n  \"status\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Hot Search Keyword",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/api/v1/hot-search-keywords/1",
+            "description": "须已禁用。详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
           "name": "List Ad Slots",
           "request": {
             "method": "GET",
@@ -865,6 +919,15 @@
             "header": [],
             "url": "{{baseUrl}}/api/v1/search?keyword=测试",
             "description": "详见 course_server/docs/api-reference.md"
+          }
+        },
+        {
+          "name": "Public Hot Search Keywords",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/hot-search-keywords",
+            "description": "仅返回启用项的 keyword 数组。详见 course_server/docs/api-reference.md"
           }
         },
         {

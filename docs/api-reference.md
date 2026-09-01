@@ -1,7 +1,7 @@
 # API 参考文档
 
 > 路由唯一事实来源：[`internal/router/router.go`](../internal/router/router.go)。
-> 当前文档覆盖：健康检查 2 个 HTTP 方法、后台 Admin 42 个接口、小程序 27 个接口。
+> 当前文档覆盖：健康检查 2 个 HTTP 方法、后台 Admin 46 个接口、小程序 28 个接口。
 
 ## 一、通用约定
 
@@ -195,7 +195,28 @@ Authorization: Bearer <token>
 }
 ```
 
-### 3.10 广告位
+### 3.10 搜索热门词
+
+| Method | Path | 说明 |
+|---|---|---|
+| GET | `/hot-search-keywords` | 搜索热门词列表（含禁用项） |
+| POST | `/hot-search-keywords` | 创建搜索热门词；`keyword` 唯一 |
+| PUT | `/hot-search-keywords/:id` | 更新搜索热门词 |
+| DELETE | `/hot-search-keywords/:id` | 删除搜索热门词；须已禁用 |
+
+请求示例：
+
+```json
+{
+  "keyword": "写人作文",
+  "sortOrder": 10,
+  "status": 1
+}
+```
+
+与 Dashboard `GET /stats/hot-searches`（`search_logs` 聚合）无关。
+
+### 3.11 广告位
 
 | Method | Path | 说明 |
 |---|---|---|
@@ -215,7 +236,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 3.11 公众号导流
+### 3.12 公众号导流
 
 | Method | Path | 说明 |
 |---|---|---|
@@ -223,7 +244,7 @@ Authorization: Bearer <token>
 | POST | `/official-account-configs` | 按 `scene` 创建或更新配置 |
 | DELETE | `/official-account-configs/:id` | 删除配置；须已禁用 |
 
-### 3.12 上传凭证
+### 3.13 上传凭证
 
 | Method | Path | 说明 |
 |---|---|---|
@@ -260,6 +281,7 @@ Authorization: Bearer <token>
 | GET | `/essays` | 无 | 优秀作文列表 |
 | GET | `/essays/:id` | 无 | 优秀作文详情 |
 | GET | `/search` | 无 | 搜索；`keyword` 必填 |
+| GET | `/hot-search-keywords` | 无 | 启用中的搜索热门词，返回 `string[]` |
 | GET | `/ad-slots` | 无 | 启用广告位；可选 `?page=` |
 | GET | `/official-account-configs` | 无 | 启用的公众号导流配置；须传 `?scene=` |
 

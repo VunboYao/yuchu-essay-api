@@ -75,6 +75,10 @@
 | 34 | 首页入口 | POST | `/admin/api/v1/home-blocks` | Admin | 登录 | 创建成功，记下 `blockId` | [ ] |
 | 35 | 首页入口 | PUT | `/admin/api/v1/home-blocks/:id` | Admin | #34 | 更新成功 | [ ] |
 | 36 | 首页入口 | DELETE | `/admin/api/v1/home-blocks/:id` | Admin | 已禁用 | 删除成功 | [ ] |
+| 36b | 搜索热门词 | GET | `/admin/api/v1/hot-search-keywords` | Admin | 登录 | 列表 | [ ] |
+| 36c | 搜索热门词 | POST | `/admin/api/v1/hot-search-keywords` | Admin | 登录 | 创建成功，记下 `keywordId` | [ ] |
+| 36d | 搜索热门词 | PUT | `/admin/api/v1/hot-search-keywords/:id` | Admin | #36c | 更新成功 | [ ] |
+| 36e | 搜索热门词 | DELETE | `/admin/api/v1/hot-search-keywords/:id` | Admin | 已禁用 | 删除成功 | [ ] |
 | 37 | 广告 | GET | `/admin/api/v1/ad-slots` | Admin | 登录 | 列表 | [ ] |
 | 38 | 广告 | POST | `/admin/api/v1/ad-slots` | Admin | 登录 | Upsert 成功 | [ ] |
 | 39 | 广告 | DELETE | `/admin/api/v1/ad-slots/:id` | Admin | 已禁用 | 删除成功或预置位后续可补回 | [ ] |
@@ -95,6 +99,7 @@
 | 49 | 范文 | GET | `/api/v1/essays` | 无 | #25 | 返回列表 | [ ] |
 | 50 | 范文 | GET | `/api/v1/essays/:id` | 无 | #25 | 返回详情 | [ ] |
 | 51 | 搜索 | GET | `/api/v1/search?keyword=测试` | 无 | #23 | 返回结果列表 | [ ] |
+| 51b | 搜索热门词 | GET | `/api/v1/hot-search-keywords` | 无 | #36c | 仅返回启用项的 `string[]` | [ ] |
 | 52 | 广告 | GET | `/api/v1/ad-slots?page=mine` | 无 | #38 | 仅返回启用项 | [ ] |
 | 53 | 公众号 | GET | `/api/v1/official-account-configs?scene=mine` | 无 | #41 | 返回启用配置或空对象 | [ ] |
 

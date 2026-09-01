@@ -246,7 +246,7 @@ headers: { Authorization: `Bearer ${token}` }
 | 文件 | 归属 | 表（一期） |
 |------|------|------------|
 | `models.go` | 公共 | 业务常量（`StatusEnabled`、`AccessTypeFree` 等），**不放 struct** |
-| `model_shared.go` | 【共用】后台写、小程序读 | `taxonomy_units`、`tags`、`articles`、`article_tags`、`essay_examples`、`essay_example_tags`、`download_files`、`ad_slots`、`home_blocks`、`official_account_configs` |
+| `model_shared.go` | 【共用】后台写、小程序读 | `taxonomy_units`、`tags`、`articles`、`article_tags`、`essay_examples`、`essay_example_tags`、`download_files`、`ad_slots`、`home_blocks`、`hot_search_keywords`、`official_account_configs` |
 | `model_admin.go` | 【后台】 | `admins`、`admin_operation_logs`、`system_settings` |
 | `model_miniprogram.go` | 【小程序】 | `users`、`download_logs`、`favorites`、`view_logs`、`search_logs`、`share_logs`、`ad_events` |
 | `model_order.go` | 【二期】占位 | 订单/支付表**仅写在此文件**（一期禁止实现逻辑） |
@@ -328,7 +328,7 @@ status, err := dto.ResolveStatus(ptr, default)   // 可选 status
 **3. 写库辅助（`internal/handler/helpers_write.go`）**
 
 - 更新使用 `map[string]interface{}` + `UpdateAndReload`，避免零值被跳过、响应返回旧数据
-- 运营配置 Upsert 按唯一键（`slotKey` / `scene`）查找后 Create 或 Update；首页入口 `home_blocks` 使用标准 `POST` + `PUT /:id` CRUD
+- 运营配置 Upsert 按唯一键（`slotKey` / `scene`）查找后 Create 或 Update；首页入口 `home_blocks`、搜索热门词 `hot_search_keywords` 使用标准 `POST` + `PUT /:id` CRUD
 
 **4. handler 模板（薄层）**
 
@@ -351,6 +351,7 @@ database.DB.Create(&tag)
 | 下载资料 | `CreateDownloadFile` / `UpdateDownloadFile` | `dto/admin/download_file.go` |
 | 优秀作文 | `CreateEssayExample` / `UpdateEssayExample` | `dto/admin/essay_example.go` |
 | 首页入口 | `CreateHomeBlock` / `UpdateHomeBlock` | `dto/admin/config.go` |
+| 搜索热门词 | `CreateHotSearchKeyword` / `UpdateHotSearchKeyword` | `dto/admin/config.go` |
 | 运营配置 | `UpsertAdSlot` / `UpsertOfficialAccountConfig` | `dto/admin/config.go` |
 
 未迁移：`track.go` 埋点、`auth.go` 登录（服务端构造数据，风险较低）。`UpdateArticleStatus` 等专用接口保持独立 struct。

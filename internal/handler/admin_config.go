@@ -1,4 +1,4 @@
-// 后台运营配置：首页区块、广告位、公众号引导；OSS 上传为占位（Day7）。
+// 后台运营配置：首页区块、搜索热门词、广告位、公众号引导；OSS 上传为占位（Day7）。
 package handler
 
 import (
@@ -119,6 +119,108 @@ func (s *Server) DeleteHomeBlock(c *gin.Context) {
 		return
 	}
 	middleware.SetOpLogRemark(c, "删除首页入口："+item.Title)
+	response.Success(c, gin.H{"id": id})
+}
+
+// ListHotSearchKeywords 查询搜索热门词列表（含禁用项，供后台管理）。
+func (s *Server) ListHotSearchKeywords(c *gin.Context) {
+	var list []model.HotSearchKeyword
+	if err := database.DB.Order("sort_order DESC, id DESC").Find(&list).Error; err != nil {
+		response.ServerError(c, "failed to list hot search keywords")
+		return
+	}
+	response.Success(c, list)
+}
+
+// CreateHotSearchKeyword 创建搜索热门词。
+func (s *Server) CreateHotSearchKeyword(c *gin.Context) {
+	var req admindto.CreateHotSearchKeywordRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+	item, err := req.ValidateForCreate()
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := model.CheckHotSearchKeywordDuplicate(database.DB, item.Keyword, 0); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if item.SortOrder == 0 {
+		item.SortOrder = model.NextSortOrder(database.DB, &model.HotSearchKeyword{})
+	}
+	if err := database.DB.Create(&item).Error; err != nil {
+		response.ServerError(c, "failed to create hot search keyword")
+		return
+	}
+	middleware.SetOpLogRemark(c, "创建搜索热门词："+item.Keyword)
+	middleware.SetOpLogTargetID(c, item.ID)
+	response.Success(c, item)
+}
+
+// UpdateHotSearchKeyword 更新搜索热门词。
+func (s *Server) UpdateHotSearchKeyword(c *gin.Context) {
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	existing, findErr := model.FindHotSearchKeywordByID(database.DB, uint(id))
+	if findErr != nil {
+		if errors.Is(findErr, gorm.ErrRecordNotFound) {
+			response.NotFound(c, "hot search keyword not found")
+			return
+		}
+		response.ServerError(c, "failed to update hot search keyword")
+		return
+	}
+	var req admindto.UpdateHotSearchKeywordRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+	item, err := req.ValidateForUpdate(existing)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := model.CheckHotSearchKeywordDuplicate(database.DB, item.Keyword, existing.ID); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := UpdateAndReload(database.DB, &existing, item.UpdateMap()); err != nil {
+		response.ServerError(c, "failed to update hot search keyword")
+		return
+	}
+	middleware.SetOpLogRemark(c, "更新搜索热门词："+existing.Keyword)
+	response.Success(c, existing)
+}
+
+// DeleteHotSearchKeyword 物理删除搜索热门词；须已禁用。
+func (s *Server) DeleteHotSearchKeyword(c *gin.Context) {
+	id, err := pathID(c)
+	if err != nil {
+		response.BadRequest(c, "invalid id")
+		return
+	}
+	item, findErr := model.FindHotSearchKeywordByID(database.DB, uint(id))
+	if findErr != nil {
+		if errors.Is(findErr, gorm.ErrRecordNotFound) {
+			response.NotFound(c, "hot search keyword not found")
+			return
+		}
+		response.ServerError(c, "failed to find hot search keyword")
+		return
+	}
+	if err := model.CheckHotSearchKeywordDeletable(item); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if err := database.DB.Delete(&item).Error; err != nil {
+		response.ServerError(c, "failed to delete hot search keyword")
+		return
+	}
+	middleware.SetOpLogRemark(c, "删除搜索热门词："+item.Keyword)
 	response.Success(c, gin.H{"id": id})
 }
 

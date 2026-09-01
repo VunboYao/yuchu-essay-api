@@ -132,3 +132,30 @@ func SeedAdSlots() error {
 	}
 	return nil
 }
+
+// SeedHotSearchKeywords 初始化搜索页热门词（幂等：仅补缺失的 keyword）。
+func SeedHotSearchKeywords() error {
+	if DB == nil {
+		return errors.New("database is not initialized")
+	}
+
+	defaults := []model.HotSearchKeyword{
+		{Keyword: "这样想象真有趣", Status: model.StatusEnabled, SortOrder: 40},
+		{Keyword: "我的植物朋友", Status: model.StatusEnabled, SortOrder: 30},
+		{Keyword: "游记作文", Status: model.StatusEnabled, SortOrder: 20},
+		{Keyword: "写人作文", Status: model.StatusEnabled, SortOrder: 10},
+	}
+
+	for _, item := range defaults {
+		var count int64
+		if err := DB.Model(&model.HotSearchKeyword{}).Where("keyword = ?", item.Keyword).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			if err := DB.Create(&item).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
