@@ -14,20 +14,29 @@ import (
 )
 
 // Home 聚合推荐文章、热门文章、优秀作文与启用中的首页区块配置。
+// 可选 query grade：按年级筛后再各取前 10 条；不传则仍为全局前 10。不套 articleFilters，避免学期/单元/关键词污染聚合。
 func (s *Server) Home(c *gin.Context) {
+	grade := strings.TrimSpace(c.Query("grade"))
+	withGrade := func(db *gorm.DB) *gorm.DB {
+		if grade == "" {
+			return db
+		}
+		return db.Where("grade = ?", grade)
+	}
+
 	var recommended []model.Article
-	// 查询推荐文章
-	database.DB.Where("status = ? AND is_recommended = ?", model.ArticleStatusPublished, true).
+	// 推荐：已发布 + is_recommended，sort_order DESC, id DESC
+	withGrade(database.DB.Where("status = ? AND is_recommended = ?", model.ArticleStatusPublished, true)).
 		Omit("body_images").Order("sort_order DESC, id DESC").Limit(10).Find(&recommended)
 
 	var hot []model.Article
-	// 查询热门文章
-	database.DB.Where("status = ? AND is_hot = ?", model.ArticleStatusPublished, true).
+	// 热门：已发布 + is_hot，view_count DESC, id DESC
+	withGrade(database.DB.Where("status = ? AND is_hot = ?", model.ArticleStatusPublished, true)).
 		Omit("body_images").Order("view_count DESC, id DESC").Limit(10).Find(&hot)
 
 	var essays []model.EssayExample
-	// 查询优秀作文
-	database.DB.Where("status = ?", model.StatusEnabled).
+	// 优秀作文：已启用，sort_order DESC, id DESC
+	withGrade(database.DB.Where("status = ?", model.StatusEnabled)).
 		Order("sort_order DESC, id DESC").Limit(10).Find(&essays)
 
 	var blocks []model.HomeBlock
