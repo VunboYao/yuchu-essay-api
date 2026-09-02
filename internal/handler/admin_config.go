@@ -41,7 +41,7 @@ func (s *Server) CreateHomeBlock(c *gin.Context) {
 	if block.SortOrder == 0 {
 		block.SortOrder = model.NextSortOrder(database.DB, &model.HomeBlock{})
 	}
-	if err := database.DB.Create(&block).Error; err != nil {
+	if err := CreateAndReload(database.DB, &block, block.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to create home block")
 		return
 	}
@@ -150,7 +150,7 @@ func (s *Server) CreateHotSearchKeyword(c *gin.Context) {
 	if item.SortOrder == 0 {
 		item.SortOrder = model.NextSortOrder(database.DB, &model.HotSearchKeyword{})
 	}
-	if err := database.DB.Create(&item).Error; err != nil {
+	if err := CreateAndReload(database.DB, &item, item.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to create hot search keyword")
 		return
 	}
@@ -259,7 +259,7 @@ func (s *Server) UpsertAdSlot(c *gin.Context) {
 		slot.AdType = existing.AdType
 	}
 	if errors.Is(findErr, gorm.ErrRecordNotFound) {
-		if err := database.DB.Create(&slot).Error; err != nil {
+		if err := CreateAndReload(database.DB, &slot, slot.UpdateMap()); err != nil {
 			response.ServerError(c, "failed to create ad slot")
 			return
 		}
@@ -333,7 +333,7 @@ func (s *Server) UpsertOfficialAccountConfig(c *gin.Context) {
 		return
 	}
 	if errors.Is(findErr, gorm.ErrRecordNotFound) {
-		if err := database.DB.Create(&cfg).Error; err != nil {
+		if err := CreateAndReload(database.DB, &cfg, cfg.UpdateMap()); err != nil {
 			response.ServerError(c, "failed to create official account config")
 			return
 		}

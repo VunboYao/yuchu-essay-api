@@ -60,7 +60,7 @@ func (s *Server) CreateDownloadFile(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	if err := database.DB.Create(&file).Error; err != nil {
+	if err := CreateAndReload(database.DB, &file, file.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to create download file"+err.Error())
 		return
 	}

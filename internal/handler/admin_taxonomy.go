@@ -72,8 +72,8 @@ func (s *Server) CreateTaxonomyUnit(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	// 写入数据库
-	if err := database.DB.Create(&unit).Error; err != nil {
+	// 写入数据库（map 才能带上 status=0）
+	if err := CreateAndReload(database.DB, &unit, unit.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to create taxonomy unit")
 		return
 	}
@@ -186,8 +186,8 @@ func (s *Server) CreateTag(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	// 写入数据库
-	if err := database.DB.Create(&tag).Error; err != nil {
+	// 写入数据库（map 才能带上 status=0）
+	if err := CreateAndReload(database.DB, &tag, tag.UpdateMap()); err != nil {
 		response.ServerError(c, "failed to create tag")
 		return
 	}

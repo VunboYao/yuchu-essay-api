@@ -72,7 +72,7 @@ func (s *Server) CreateEssayExample(c *gin.Context) {
 	}
 	// 事务内创建优秀作文并可选写入标签关联
 	if err := database.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&essay).Error; err != nil {
+		if err := CreateAndReload(tx, &essay, essay.UpdateMap()); err != nil {
 			return err
 		}
 		if req.TagIDs != nil {
