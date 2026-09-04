@@ -43,30 +43,33 @@ func CheckTagNameDuplicate(db *gorm.DB, name string, excludeID uint) error {
 	return nil
 }
 
-// CountTagUsage 统计标签被文章与优秀作文引用的次数。
-func CountTagUsage(db *gorm.DB, tagID uint) (articleCount, essayCount int64, err error) {
+// CountTagUsage 统计标签被文章、优秀作文与讲解视频引用的次数。
+func CountTagUsage(db *gorm.DB, tagID uint) (articleCount, essayCount, videoCount int64, err error) {
 	if err = db.Model(&ArticleTag{}).Where("tag_id = ?", tagID).Count(&articleCount).Error; err != nil {
 		return
 	}
-	err = db.Model(&EssayExampleTag{}).Where("tag_id = ?", tagID).Count(&essayCount).Error
+	if err = db.Model(&EssayExampleTag{}).Where("tag_id = ?", tagID).Count(&essayCount).Error; err != nil {
+		return
+	}
+	err = db.Model(&VideoTag{}).Where("tag_id = ?", tagID).Count(&videoCount).Error
 	return
 }
 
 // tagInUseError 标签仍被内容引用时的中文错误提示。
-func tagInUseError(articleCount, essayCount int64) error {
-	if articleCount == 0 && essayCount == 0 {
+func tagInUseError(articleCount, essayCount, videoCount int64) error {
+	if articleCount == 0 && essayCount == 0 && videoCount == 0 {
 		return nil
 	}
-	return fmt.Errorf("该标签仍被 %d 篇文章、%d 篇优秀作文使用，请先在对应内容中取消关联后再操作", articleCount, essayCount)
+	return fmt.Errorf("该标签仍被 %d 篇文章、%d 篇优秀作文、%d 条讲解视频使用，请先在对应内容中取消关联后再操作", articleCount, essayCount, videoCount)
 }
 
 // CheckTagDisableAllowed 启用→禁用前校验：无内容关联才允许禁用。
 func CheckTagDisableAllowed(db *gorm.DB, tagID uint) error {
-	articleCount, essayCount, err := CountTagUsage(db, tagID)
+	articleCount, essayCount, videoCount, err := CountTagUsage(db, tagID)
 	if err != nil {
 		return err
 	}
-	return tagInUseError(articleCount, essayCount)
+	return tagInUseError(articleCount, essayCount, videoCount)
 }
 
 // CheckTagDeletable 物理删除前校验：须已禁用且无内容关联。
@@ -322,6 +325,119 @@ func (f DownloadFile) UpdateMap() map[string]interface{} {
 }
 
 // --- 运营配置 ---
+
+// SettingKeyChannelsFinderUserName 全站视频号 ID（finder-user-name），只开这一键。
+const SettingKeyChannelsFinderUserName = "channels_finder_user_name"
+
+func (v Video) UpdateMap() map[string]interface{} {
+	return map[string]interface{}{
+		"title":      v.Title,
+		"feed_id":    v.FeedID,
+		"grade":      v.Grade,
+		"semester":   v.Semester,
+		"article_id": v.ArticleID,
+		"essay_id":   v.EssayID,
+		"sort_order": v.SortOrder,
+		"status":     v.Status,
+	}
+}
+
+// FindVideoByID 按 id 查找讲解视频；不存在时返回 gorm.ErrRecordNotFound。
+func FindVideoByID(db *gorm.DB, id uint) (Video, error) {
+	var item Video
+	err := db.First(&item, id).Error
+	return item, err
+}
+
+// FeedIDTaken 检查 feed_id 是否已被占用；创建传 excludeID=0，更新传自身 id。
+func FeedIDTaken(db *gorm.DB, feedID string, excludeID uint) (bool, error) {
+	q := db.Model(&Video{}).Where("feed_id = ?", feedID)
+	if excludeID > 0 {
+		q = q.Where("id != ?", excludeID)
+	}
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// CheckVideoDeletable 物理删除前校验：须已下架（上架中不可删）。
+func CheckVideoDeletable(v Video) error {
+	if v.Status != StatusDisabled {
+		return fmt.Errorf("仅已下架的讲解视频可删除，请先将视频下架")
+	}
+	return nil
+}
+
+// CheckVideoArticleLink 关联专题须存在且已发布；未关联（nil/0）时通过。
+func CheckVideoArticleLink(db *gorm.DB, articleID *uint) error {
+	if articleID == nil || *articleID == 0 {
+		return nil
+	}
+	var article Article
+	if err := db.Select("id", "status").First(&article, *articleID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("关联专题不存在")
+		}
+		return err
+	}
+	if article.Status != ArticleStatusPublished {
+		return fmt.Errorf("关联专题未发布")
+	}
+	return nil
+}
+
+// CheckVideoEssayLink 关联优秀作文须存在且已启用；未关联（nil/0）时通过。
+func CheckVideoEssayLink(db *gorm.DB, essayID *uint) error {
+	if essayID == nil || *essayID == 0 {
+		return nil
+	}
+	var essay EssayExample
+	if err := db.Select("id", "status").First(&essay, *essayID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("关联优秀作文不存在")
+		}
+		return err
+	}
+	if essay.Status != StatusEnabled {
+		return fmt.Errorf("关联优秀作文未启用")
+	}
+	return nil
+}
+
+// GetSystemSetting 按 key 读取配置值；无记录返回空串，不返回 ErrRecordNotFound。
+func GetSystemSetting(db *gorm.DB, key string) (string, error) {
+	var item SystemSetting
+	err := db.Where("setting_key = ?", key).First(&item).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return item.SettingValue, nil
+}
+
+// UpsertSystemSetting 按 setting_key 唯一索引写入；已存在则更新 value / description。
+func UpsertSystemSetting(db *gorm.DB, key, value, desc string) error {
+	var item SystemSetting
+	err := db.Where("setting_key = ?", key).First(&item).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return db.Create(&SystemSetting{
+			SettingKey:   key,
+			SettingValue: value,
+			Description:  desc,
+		}).Error
+	}
+	if err != nil {
+		return err
+	}
+	return db.Model(&item).Updates(map[string]interface{}{
+		"setting_value": value,
+		"description":   desc,
+	}).Error
+}
 
 func (b HomeBlock) UpdateMap() map[string]interface{} {
 	return map[string]interface{}{

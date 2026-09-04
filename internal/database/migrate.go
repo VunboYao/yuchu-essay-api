@@ -20,6 +20,8 @@ func AutoMigrate() error {
 		&model.ArticleTag{},
 		&model.EssayExample{},
 		&model.EssayExampleTag{},
+		&model.Video{},
+		&model.VideoTag{},
 		&model.DownloadFile{},
 		&model.AdSlot{},
 		&model.HomeBlock{},

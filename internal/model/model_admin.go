@@ -12,6 +12,8 @@ const (
 	AdminTargetTypeTag             = "tag"
 	AdminTargetTypeTaxonomyUnit    = "taxonomy_unit"
 	AdminTargetTypeHomeBlock       = "home_block"
+	AdminTargetTypeVideo           = "video"
+	AdminTargetTypeVideoChannel    = "video_channel"
 	AdminTargetTypeAdSlot          = "ad_slot"
 	AdminTargetTypeOfficialAccount = "official_account"
 	AdminTargetTypeUpload          = "upload"
@@ -25,6 +27,8 @@ var adminPathToTargetType = map[string]string{
 	"tags":                     AdminTargetTypeTag,
 	"taxonomy-units":           AdminTargetTypeTaxonomyUnit,
 	"home-blocks":              AdminTargetTypeHomeBlock,
+	"videos":                   AdminTargetTypeVideo,
+	"video-channel":            AdminTargetTypeVideoChannel,
 	"ad-slots":                 AdminTargetTypeAdSlot,
 	"official-account-configs": AdminTargetTypeOfficialAccount,
 	"upload":                   AdminTargetTypeUpload,

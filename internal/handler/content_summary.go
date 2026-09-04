@@ -9,6 +9,7 @@ import (
 
 // ContentArticleSummary 文章列表卡片字段（不含正文图）。
 type ContentArticleSummary struct {
+	ID         uint   `json:"id"`
 	Title      string `json:"title"`
 	CoverImg   string `json:"coverImg"`
 	Grade      int    `json:"grade"`
@@ -20,6 +21,7 @@ type ContentArticleSummary struct {
 
 // ContentEssaySummary 范文列表卡片字段（无 coverImg，前端用默认图）。
 type ContentEssaySummary struct {
+	ID           uint   `json:"id"`
 	Title        string `json:"title"`
 	Grade        int    `json:"grade"`
 	WordCount    int    `json:"wordCount"`
@@ -137,6 +139,7 @@ func buildContentTarget(
 			return false, nil
 		}
 		return true, ContentArticleSummary{
+			ID:         article.ID,
 			Title:      article.Title,
 			CoverImg:   article.CoverImg,
 			Grade:      article.Grade,
@@ -151,6 +154,7 @@ func buildContentTarget(
 			return false, nil
 		}
 		summary := ContentEssaySummary{
+			ID:        essay.ID,
 			Title:     essay.Title,
 			Grade:     essay.Grade,
 			WordCount: essay.WordCount,

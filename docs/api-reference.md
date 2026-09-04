@@ -1,7 +1,7 @@
 # API 参考文档
 
 > 路由唯一事实来源：[`internal/router/router.go`](../internal/router/router.go)。
-> 当前文档覆盖：健康检查 2 个 HTTP 方法、后台 Admin 46 个接口、小程序 28 个接口。
+> 当前文档覆盖：健康检查 2 个 HTTP 方法、后台 Admin 53 个接口、小程序 29 个接口。
 
 ## 一、通用约定
 
@@ -252,6 +252,20 @@ Authorization: Bearer <token>
 
 配置完整时返回 `mode=oss`；OSS 配置缺失时返回占位信息，便于本地开发降级。
 
+### 3.14 视频号讲解视频
+
+| Method | Path | 鉴权 | 说明 |
+|---|---|---|---|
+| GET | `/video-channel` | Admin | 读取全站视频号 ID（`finderUserName`） |
+| PUT | `/video-channel` | Admin | 写入视频号 ID；空串视为清空 |
+| GET | `/videos` | Admin | 列表；可筛 `grade` / `semester` / `status` / `keyword`，分页 |
+| POST | `/videos` | Admin | 创建；`title`、`feedId` 必填；`grade` 为 0 或不传表示不限 |
+| GET | `/videos/:id` | Admin | 详情（含 `tags`） |
+| PUT | `/videos/:id` | Admin | 更新；`tagIds` 省略不动标签，传 `[]` 清空 |
+| DELETE | `/videos/:id` | Admin | 删除；须已下架 |
+
+`feedId` 冲突返回 400。关联专题须已发布，关联优秀作文须已启用。视频号 ID 与每条 feed-id 不是同一个字段。
+
 ## 四、小程序 API
 
 小程序统一前缀：`/api/v1`。
@@ -284,6 +298,7 @@ Authorization: Bearer <token>
 | GET | `/hot-search-keywords` | 无 | 启用中的搜索热门词，返回 `string[]` |
 | GET | `/ad-slots` | 无 | 启用广告位；可选 `?page=` |
 | GET | `/official-account-configs` | 无 | 启用的公众号导流配置；须传 `?scene=` |
+| GET | `/videos` | 无 | 讲解视频列表；`finderUserName` 在响应顶层；可筛 `grade` / `semester` / `tagId` |
 
 ### 4.3 下载
 
@@ -356,7 +371,6 @@ Authorization: Bearer <token>
 | `/api/v1/orders/*` | 小程序订单 |
 | `/api/v1/pay/*` | 小程序支付 |
 | `/api/v1/courses/*` | 旧课件方案 |
-| 视频号/讲解视频相关 | 一期禁止 |
 
 二期支付、订单、权益规划见 [../../prd/004-二期支付订单登录规划.md](../../prd/004-二期支付订单登录规划.md)。
 

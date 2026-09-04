@@ -106,6 +106,15 @@ func Setup(cfg *config.Config) *gin.Engine {
 		protectedAdmin.PUT("/home-blocks/:id", h.UpdateHomeBlock)
 		// 首页入口: 删除（须已禁用）
 		protectedAdmin.DELETE("/home-blocks/:id", h.DeleteHomeBlock)
+		// 视频号 ID（全站一次）
+		protectedAdmin.GET("/video-channel", h.GetVideoChannel)
+		protectedAdmin.PUT("/video-channel", h.UpdateVideoChannel)
+		// 讲解视频
+		protectedAdmin.GET("/videos", h.ListVideos)
+		protectedAdmin.POST("/videos", h.CreateVideo)
+		protectedAdmin.GET("/videos/:id", h.GetVideo)
+		protectedAdmin.PUT("/videos/:id", h.UpdateVideo)
+		protectedAdmin.DELETE("/videos/:id", h.DeleteVideo)
 		// 搜索热门词: 查询
 		protectedAdmin.GET("/hot-search-keywords", h.ListHotSearchKeywords)
 		// 搜索热门词: 创建
@@ -155,6 +164,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 		api.GET("/ad-slots", h.PublicAdSlots)
 		// 公众号导流配置（仅返回启用项，须传 ?scene=）
 		api.GET("/official-account-configs", h.PublicOfficialAccountConfig)
+		// 讲解视频列表（视频号 feed）
+		api.GET("/videos", h.ListPublicVideos)
 
 		// 下载：可选 JWT，download_logs / ad_events 的 userId 仅服务端从 token 解析
 		download := api.Group("")

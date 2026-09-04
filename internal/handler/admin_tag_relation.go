@@ -1,4 +1,4 @@
-// 后台内容标签关联内部 helper（article_tags / essay_example_tags）。
+// 后台内容标签关联内部 helper（article_tags / essay_example_tags / video_tags）。
 // 标签读写已并入文章/优秀作文 CRUD 的 tagIds 字段，采用先清后插的全量替换语义。
 package handler
 
@@ -64,6 +64,22 @@ func replaceEssayTags(tx *gorm.DB, essayID uint, tagIDs []uint) error {
 	rows := make([]model.EssayExampleTag, 0, len(tagIDs))
 	for _, tagID := range tagIDs {
 		rows = append(rows, model.EssayExampleTag{EssayID: essayID, TagID: tagID})
+	}
+	return tx.Create(&rows).Error
+}
+
+// replaceVideoTags 全量替换视频标签，语义同 replaceArticleTags。
+func replaceVideoTags(tx *gorm.DB, videoID uint, tagIDs []uint) error {
+	tagIDs = validTagIDs(tx, dedupeTagIDs(tagIDs))
+	if err := tx.Where("video_id = ?", videoID).Delete(&model.VideoTag{}).Error; err != nil {
+		return err
+	}
+	if len(tagIDs) == 0 {
+		return nil
+	}
+	rows := make([]model.VideoTag, 0, len(tagIDs))
+	for _, tagID := range tagIDs {
+		rows = append(rows, model.VideoTag{VideoID: videoID, TagID: tagID})
 	}
 	return tx.Create(&rows).Error
 }
@@ -214,4 +230,59 @@ func (s *Server) essayTags(essayID uint) []model.Tag {
 		Order("tags.sort_order DESC, tags.id DESC").
 		Find(&tags)
 	return tags
+}
+
+// videoTags 关联表 join tags，按排序返回标签实体。
+func (s *Server) videoTags(videoID uint) []model.Tag {
+	var tags []model.Tag
+	database.DB.Joins("JOIN video_tags ON video_tags.tag_id = tags.id").
+		Where("video_tags.video_id = ?", videoID).
+		Order("tags.sort_order DESC, tags.id DESC").
+		Find(&tags)
+	return tags
+}
+
+// VideoListItem 后台视频列表项：视频字段 + 关联标签。
+type VideoListItem struct {
+	model.Video
+	Tags []model.Tag `json:"tags"`
+}
+
+// videoTagRow 批量查询 video_tags JOIN tags 时的扫描行。
+type videoTagRow struct {
+	VideoID uint `gorm:"column:video_id"`
+	model.Tag
+}
+
+// videoTagsByVideoIDs 批量加载多条视频的标签，按 sort_order DESC, id DESC。
+func videoTagsByVideoIDs(videoIDs []uint) map[uint][]model.Tag {
+	result := make(map[uint][]model.Tag, len(videoIDs))
+	if len(videoIDs) == 0 {
+		return result
+	}
+	var rows []videoTagRow
+	database.DB.Table("video_tags").
+		Select("video_tags.video_id, tags.*").
+		Joins("JOIN tags ON tags.id = video_tags.tag_id").
+		Where("video_tags.video_id IN ?", videoIDs).
+		Order("tags.sort_order DESC, tags.id DESC").
+		Scan(&rows)
+	for _, row := range rows {
+		tag := row.Tag
+		result[row.VideoID] = append(result[row.VideoID], tag)
+	}
+	return result
+}
+
+// BuildVideoListItems 将视频列表与标签映射组装为列表响应项。
+func BuildVideoListItems(videos []model.Video, tagsByVideoID map[uint][]model.Tag) []VideoListItem {
+	items := make([]VideoListItem, 0, len(videos))
+	for _, video := range videos {
+		tags := tagsByVideoID[video.ID]
+		if tags == nil {
+			tags = []model.Tag{}
+		}
+		items = append(items, VideoListItem{Video: video, Tags: tags})
+	}
+	return items
 }

@@ -1,6 +1,7 @@
 package model_test
 
 import (
+	"strings"
 	"testing"
 
 	"course_server/internal/model"
@@ -15,7 +16,7 @@ func openTagTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
-	if err := db.AutoMigrate(&model.Tag{}, &model.ArticleTag{}, &model.EssayExampleTag{}); err != nil {
+	if err := db.AutoMigrate(&model.Tag{}, &model.ArticleTag{}, &model.EssayExampleTag{}, &model.VideoTag{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	return db
@@ -76,5 +77,25 @@ func TestCheckTagDeletable(t *testing.T) {
 	}
 	if err := model.CheckTagDeletable(db, disabled); err == nil {
 		t.Fatal("expected delete blocked when essay linked")
+	}
+}
+
+func TestCheckTagDisableAllowedBlockedByVideo(t *testing.T) {
+	t.Parallel()
+	db := openTagTestDB(t)
+
+	tag := model.Tag{Name: "讲解", Status: model.StatusEnabled}
+	if err := db.Create(&tag).Error; err != nil {
+		t.Fatalf("create tag: %v", err)
+	}
+	if err := db.Create(&model.VideoTag{VideoID: 1, TagID: tag.ID}).Error; err != nil {
+		t.Fatalf("create video tag: %v", err)
+	}
+	err := model.CheckTagDisableAllowed(db, tag.ID)
+	if err == nil {
+		t.Fatal("expected disable blocked when video linked")
+	}
+	if !strings.Contains(err.Error(), "讲解视频") {
+		t.Fatalf("error should mention 讲解视频, got %v", err)
 	}
 }

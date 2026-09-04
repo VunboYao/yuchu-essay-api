@@ -115,6 +115,29 @@ type EssayExampleTag struct {
 	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
 }
 
+// Video 视频号讲解视频：后台录入单条 feed，小程序用 channel-video 播放。
+type Video struct {
+	ID        uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
+	Title     string        `gorm:"size:120;not null;comment:后台标题(封面/标题由视频号组件渲染)" json:"title"`
+	FeedID    string        `gorm:"size:255;uniqueIndex;not null;comment:视频号单条视频feed-id(唯一)" json:"feedId"`
+	Grade     int           `gorm:"index;not null;default:0;comment:年级 0不限 1-6指定" json:"grade"`
+	Semester  string        `gorm:"size:20;index;not null;default:'';comment:册次 空串=不限/上册/下册" json:"semester"`
+	ArticleID *uint         `gorm:"index;comment:关联专题文章ID(可空,不建DB外键)" json:"articleId"`
+	EssayID   *uint         `gorm:"index;comment:关联优秀作文ID(可空,不建DB外键)" json:"essayId"`
+	SortOrder int           `gorm:"index;not null;default:0;comment:排序权重" json:"sortOrder"`
+	Status    int           `gorm:"index;not null;default:1;comment:状态 0下架 1上架" json:"status"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+	UpdatedAt jsontime.Time `gorm:"comment:更新时间" json:"updatedAt"`
+}
+
+// VideoTag 视频与标签关联，与 ArticleTag 同构。
+type VideoTag struct {
+	ID        uint          `gorm:"primaryKey;comment:主键ID" json:"id"`
+	VideoID   uint          `gorm:"uniqueIndex:uk_video_tag;not null;comment:视频ID" json:"videoId"`
+	TagID     uint          `gorm:"uniqueIndex:uk_video_tag;not null;comment:标签ID" json:"tagId"`
+	CreatedAt jsontime.Time `gorm:"comment:创建时间" json:"createdAt"`
+}
+
 // --- 下载资料（Day7）---
 
 // DownloadFile 下载资料；access_type 统一表达分类与访问权限，owner 字段二期接订单。

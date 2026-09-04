@@ -27,6 +27,8 @@ var tableCommentEntries = []struct {
 	{table: "article_tags", comment: TableScopeShared + "文章与标签关联"},
 	{table: "essay_examples", comment: TableScopeShared + "优秀范文"},
 	{table: "essay_example_tags", comment: TableScopeShared + "范文与标签关联"},
+	{table: "videos", comment: TableScopeShared + "视频号讲解视频"},
+	{table: "video_tags", comment: TableScopeShared + "视频与标签关联"},
 	{table: "download_files", comment: TableScopeShared + "下载资料元数据（含二期权限字段预留）"},
 	{table: "ad_slots", comment: TableScopeShared + "广告位配置（后台配置、小程序展示）"},
 	{table: "home_blocks", comment: TableScopeShared + "首页可配置入口（图标/标题/跳转）"},
