@@ -108,7 +108,8 @@ func (c *Client) SignDownloadURL(fileURL string, expireSec int64) string {
 	if !ok {
 		return pseudoSignedURL(fileURL, expireSec)
 	}
-	client, err := oss.New(normalizeEndpoint(c.cfg.Endpoint), c.cfg.AccessKeyID, c.cfg.AccessKeySecret)
+	// 微信 downloadFile 只认 HTTPS 合法域名；裸 endpoint 会被 SDK 签成 http://，正式版直接失败。
+	client, err := oss.New("https://"+normalizeEndpoint(c.cfg.Endpoint), c.cfg.AccessKeyID, c.cfg.AccessKeySecret)
 	if err != nil {
 		return pseudoSignedURL(fileURL, expireSec)
 	}

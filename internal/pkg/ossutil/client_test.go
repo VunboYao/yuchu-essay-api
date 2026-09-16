@@ -42,6 +42,19 @@ func TestSignDownloadURLFallbackWhenUnconfigured(t *testing.T) {
 	}
 }
 
+func TestSignDownloadURLUsesHTTPS(t *testing.T) {
+	c := ossutil.NewClient(config.OSSConfig{
+		Endpoint:        "oss-cn-guangzhou.aliyuncs.com",
+		Bucket:          "essay-mvp",
+		AccessKeyID:     "id",
+		AccessKeySecret: "secret",
+	})
+	got := c.SignDownloadURL("downloads/a.pdf", 300)
+	if !strings.HasPrefix(got, "https://essay-mvp.oss-cn-guangzhou.aliyuncs.com/") {
+		t.Fatalf("expected https signed url, got %s", got)
+	}
+}
+
 func TestPublicURLPrefersCDN(t *testing.T) {
 	c := ossutil.NewClient(config.OSSConfig{
 		Endpoint:  "oss-cn-hangzhou.aliyuncs.com",
