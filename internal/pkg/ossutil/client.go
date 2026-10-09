@@ -166,11 +166,16 @@ func (c *Client) NormalizeObjectRefs(refs []string) []string {
 	return out
 }
 
-// ResolvePublicURL 读时解析：OSS 引用 → 当前配置的 PublicURL；外链原样返回。
+// ResolvePublicURL 读时解析：OSS 引用 → 当前配置的 PublicURL；外链与本地静态资源原样返回。
 func (c *Client) ResolvePublicURL(ref string) string {
 	ref = strings.TrimSpace(ref)
 	if ref == "" {
 		return ""
+	}
+	// 本地静态资源（r.Static("/uploads", ...)，如头像、本地开发占位封面）不走 OSS，
+	// 原样返回相对路径，交给前端同源访问 / 反代。
+	if strings.HasPrefix(ref, "/uploads/") {
+		return ref
 	}
 	if key, ok := c.parseObjectKey(ref); ok {
 		return c.PublicURL(key)
