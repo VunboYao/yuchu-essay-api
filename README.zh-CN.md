@@ -1,9 +1,8 @@
-# course_server
+> **原始中文 README（从私有 monorepo 带出，保留作参考）**
+> 其中的 `AGENTS.md`、`deploy/`、`prd/`、`study_doc/`、`Admin/` 等路径不在本仓库。
+> 英文说明见 [README.md](./README.md)；接口细节见 [`docs/api-reference.md`](./docs/api-reference.md)。
 
-> **这是从私有 monorepo 里带出来的原始中文 README，保留作参考。**
-> 它按当时的完整仓库写的，里面的 `AGENTS.md`、`deploy/`、`prd/`、`study_doc/`、`Admin/`
-> 等链接指向的是**不在本仓库**的目录。
-> 当前可用的说明看英文版 [README.md](./README.md)。
+# course_server
 
 内容型作文小程序 MVP 后端。
 
