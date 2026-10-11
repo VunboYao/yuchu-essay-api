@@ -1,0 +1,19 @@
+# Binaries
+course_server
+*.exe
+*.test
+
+# Local config — never commit real credentials
+config.yaml
+config.prod.yaml
+
+# Runtime artefacts
+tmp/
+uploads/
+*.log
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

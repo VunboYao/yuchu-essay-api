@@ -1,0 +1,41 @@
+# Copy to config.yaml and fill in. Never commit the real config.yaml.
+#
+#   cp config.yaml.example config.yaml
+#
+# Only server.addr is required to boot; Redis failing to connect logs a warning
+# and does not stop the service. OSS and WeChat can stay empty for local work —
+# upload endpoints then return a placeholder mode instead of a credential.
+
+server:
+  addr: ":8080"
+
+database:
+  # user:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
+  dsn: "root:password@tcp(127.0.0.1:3306)/essay_mvp?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""
+  db: 0
+
+jwt:
+  # Change this. Any sufficiently long random string.
+  secret: "change-me-to-a-long-random-string"
+  issuer: "course-server"
+
+oss:
+  endpoint: ""
+  bucket: ""
+  access_key_id: ""
+  access_key_secret: ""
+  # Public CDN domain used to build URLs for public objects.
+  cdn_domain: ""
+  # RAM role assumed by the STS upload endpoint.
+  sts_role_arn: ""
+  upload_dir: "essay-mvp/"
+
+wechat:
+  # Leave both empty to use the dev fallback (`openid = "dev_" + code`).
+  # Filling them in switches login to a real code2session call.
+  app_id: ""
+  app_secret: ""
